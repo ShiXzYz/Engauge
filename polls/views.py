@@ -78,10 +78,28 @@ def review_generated(request, doc_id):
                 question_format=question_format,
                 correct_answer=correct_answer
             )
+
+            # Check if there are any remaining pending questions
+            remaining_questions = doc.generated_questions.filter(status='pending').count()
+            if remaining_questions == 0:
+                # No more pending questions, delete the document
+                messages.success(request, f'Document "{doc.title}" has been automatically deleted (no pending questions remaining).')
+                doc.delete()
+                return redirect('polls:index')
+
             return redirect('polls:manage_polls')
         else:
             q.status = 'rejected'
             q.save()
+
+        # Check if there are any remaining pending questions after rejection
+        remaining_questions = doc.generated_questions.filter(status='pending').count()
+        if remaining_questions == 0:
+            # No more pending questions, delete the document
+            messages.success(request, f'Document "{doc.title}" has been automatically deleted (no pending questions remaining).')
+            doc.delete()
+            return redirect('polls:index')
+
         return redirect('polls:review_generated', doc_id=doc.id)
     return render(request, 'polls/review.html', {
         'document': doc,
@@ -126,6 +144,16 @@ def poll_vote(request, poll_id):
             answer_choice = int(request.POST.get('answer_choice'))
             # Store as dict: {"team": "left"/"right", "answer": choice_index}
             choice = {"team": team_side, "answer": answer_choice}
+        elif poll.question_format == 'meta_prediction':
+            # Meta prediction: store predictions and actual answer
+            num_choices = len(poll.choices)
+            predictions = []
+            for i in range(num_choices):
+                pred = int(request.POST.get(f'prediction_{i}', 0))
+                predictions.append(pred)
+            actual_answer = int(request.POST.get('actual_answer'))
+            # Store as dict: {"predictions": [25, 30, 20, 25], "answer": choice_index}
+            choice = {"predictions": predictions, "answer": actual_answer}
         else:
             choice = None
 
@@ -245,6 +273,60 @@ def poll_results(request, poll_id):
             'total': total,
             'winner': winner,
             'format': 'team_battle'
+        })
+
+    elif poll.question_format == 'meta_prediction':
+        # Meta prediction: calculate actual percentages and average predictions
+        num_choices = len(poll.choices)
+        actual_counts = [0] * num_choices
+        avg_predictions = [0.0] * num_choices
+        prediction_totals = [0] * num_choices
+
+        for response in poll.responses.all():
+            response_data = response.choice  # {"predictions": [25, 30, 20, 25], "answer": choice_index}
+
+            # Count actual answers
+            actual_answer = response_data.get('answer')
+            actual_counts[actual_answer] += 1
+
+            # Sum up predictions for averaging
+            predictions = response_data.get('predictions', [])
+            for i, pred in enumerate(predictions):
+                prediction_totals[i] += pred
+
+        # Calculate average predictions and actual percentages
+        for i in range(num_choices):
+            avg_predictions[i] = round(prediction_totals[i] / total, 1) if total > 0 else 0
+
+        actual_percentages = []
+        for count in actual_counts:
+            actual_percentages.append(round((count / total * 100), 1) if total > 0 else 0)
+
+        # Calculate prediction accuracy (how close predictions were to reality)
+        accuracy_scores = []
+        for i in range(num_choices):
+            diff = abs(avg_predictions[i] - actual_percentages[i])
+            accuracy = max(0, 100 - diff)  # 100 = perfect, 0 = way off
+            accuracy_scores.append(round(accuracy, 1))
+
+        overall_accuracy = round(sum(accuracy_scores) / num_choices, 1) if num_choices > 0 else 0
+
+        results_data = []
+        for i in range(num_choices):
+            results_data.append({
+                'choice': poll.choices[i],
+                'predicted_pct': avg_predictions[i],
+                'actual_pct': actual_percentages[i],
+                'actual_count': actual_counts[i],
+                'accuracy': accuracy_scores[i]
+            })
+
+        return render(request, 'polls/results.html', {
+            'poll': poll,
+            'results_data': results_data,
+            'total': total,
+            'overall_accuracy': overall_accuracy,
+            'format': 'meta_prediction'
         })
 
     return render(request, 'polls/results.html', {'poll': poll, 'total': 0})

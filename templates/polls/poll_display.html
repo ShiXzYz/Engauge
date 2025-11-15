@@ -233,6 +233,93 @@
         {% endfor %}
         </ul>
       </div>
+
+    {% elif poll.question_format == 'meta_prediction' %}
+      <!-- Step 1: Predict how peers will answer -->
+      <div id="predictionStep">
+        <p style="text-align:center; font-style:italic; margin-bottom:1.5rem;">
+          Step 1: Predict what % of your classmates will choose each answer
+        </p>
+
+        <div id="predictionError" style="
+          display:none;
+          background:#fee2e2;
+          color:#b91c1c;
+          padding:0.7rem 1rem;
+          border-radius:8px;
+          margin-bottom:1rem;
+          font-weight:600;
+        "></div>
+
+        <table style="width:100%; margin-bottom:1.5rem;">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:0.5rem;">Choice</th>
+              <th style="text-align:center; padding:0.5rem;">Predicted %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in poll.choices %}
+            <tr>
+              <td style="padding:0.7rem;">{{ c }}</td>
+              <td style="text-align:center; padding:0.7rem;">
+                <input type="number"
+                       name="prediction_{{ forloop.counter0 }}"
+                       id="prediction_{{ forloop.counter0 }}"
+                       class="prediction-input"
+                       min="0" max="100"
+                       value="0"
+                       required
+                       style="width:80px; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1; text-align:center;"
+                       onchange="updatePredictionTotal()">
+                <span style="margin-left:0.3rem;">%</span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div style="text-align:center; margin-bottom:1.5rem;">
+          <strong>Total: <span id="predictionTotal" style="font-size:1.2rem; color:#6366f1;">0</span>%</strong>
+          <span id="totalWarning" style="display:none; color:#ef4444; margin-left:1rem; font-weight:600;">
+            Must equal 100%
+          </span>
+        </div>
+
+        <div style="text-align:center;">
+          <button type="button" onclick="proceedToAnswer()" style="
+            padding:1rem 2rem;
+            background:linear-gradient(135deg, #6366f1, #4f46e5);
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:1.1rem;
+            font-weight:600;
+            cursor:pointer;
+            box-shadow:0 4px 12px rgba(99,102,241,0.3);
+          ">
+            Next: Your Answer →
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Answer the question yourself -->
+      <div id="answerStep" style="display:none;">
+        <p style="text-align:center; font-style:italic; margin-bottom:1.5rem;">
+          Step 2: Now answer the question yourself
+        </p>
+
+        <ul class="choice-list">
+        {% for c in poll.choices %}
+          <li onclick="this.querySelector('input').checked = true;">
+            <label style="cursor:pointer; display:flex; align-items:center;">
+              <input type="radio" name="actual_answer" value="{{ forloop.counter0 }}" required />
+              {{ c }}
+            </label>
+          </li>
+        {% endfor %}
+        </ul>
+      </div>
     {% endif %}
 
     <button type="submit" class="submit-btn" style="margin-top:1.5rem;">
@@ -290,6 +377,56 @@
 
     // Show question section
     document.getElementById('questionSection').style.display = 'block';
+  }
+</script>
+{% endif %}
+
+{% if poll.question_format == 'meta_prediction' %}
+<script>
+  function updatePredictionTotal() {
+    var inputs = document.querySelectorAll('.prediction-input');
+    var total = 0;
+
+    for (var i = 0; i < inputs.length; i++) {
+      var value = parseInt(inputs[i].value) || 0;
+      total += value;
+    }
+
+    var totalSpan = document.getElementById('predictionTotal');
+    var warningSpan = document.getElementById('totalWarning');
+
+    totalSpan.textContent = total;
+
+    if (total === 100) {
+      totalSpan.style.color = '#10b981';
+      warningSpan.style.display = 'none';
+    } else {
+      totalSpan.style.color = '#ef4444';
+      warningSpan.style.display = 'inline';
+    }
+  }
+
+  function proceedToAnswer() {
+    var inputs = document.querySelectorAll('.prediction-input');
+    var total = 0;
+
+    for (var i = 0; i < inputs.length; i++) {
+      var value = parseInt(inputs[i].value) || 0;
+      total += value;
+    }
+
+    if (total !== 100) {
+      var errorDiv = document.getElementById('predictionError');
+      errorDiv.textContent = 'Error: Predictions must total exactly 100%';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    // Hide prediction step
+    document.getElementById('predictionStep').style.display = 'none';
+
+    // Show answer step
+    document.getElementById('answerStep').style.display = 'block';
   }
 </script>
 {% endif %}

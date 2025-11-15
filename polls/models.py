@@ -31,6 +31,7 @@ class Poll(models.Model):
         ('single_choice', 'Single Choice'),
         ('speed_ranking', 'Speed Ranking'),
         ('team_battle', 'Team Battle'),
+        ('meta_prediction', 'Meta Prediction'),
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     question_text = models.TextField()

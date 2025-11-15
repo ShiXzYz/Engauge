@@ -47,11 +47,12 @@
           <option value="single_choice">Single Choice</option>
           <option value="speed_ranking">Speed Ranking</option>
           <option value="team_battle">Team Battle</option>
+          <option value="meta_prediction">Meta Prediction</option>
         </select>
       </div>
 
-      <div id="correct_answer_{{ q.id }}" style="margin-top:1rem; display:none;">
-        <label style="font-weight:600;">Correct Answer (for Team Battle):</label>
+      <div id="correct_answer_{{ q.id }}" style="margin-top:1rem; display:block;">
+        <label style="font-weight:600;">Correct Answer:</label>
         <select name="correct_answer"
                 style="margin-left:0.5rem; padding:0.5rem; border-radius:8px;">
           {% for c in q.choices %}
@@ -85,10 +86,11 @@ function toggleCorrectAnswer(questionId) {
   var formatSelect = document.getElementById('format_' + questionId);
   var correctAnswerDiv = document.getElementById('correct_answer_' + questionId);
 
-  if (formatSelect.value === 'team_battle') {
-    correctAnswerDiv.style.display = 'block';
-  } else {
+  // Hide correct answer for speed ranking and meta prediction
+  if (formatSelect.value === 'speed_ranking' || formatSelect.value === 'meta_prediction') {
     correctAnswerDiv.style.display = 'none';
+  } else {
+    correctAnswerDiv.style.display = 'block';
   }
 }
 </script>
