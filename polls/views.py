@@ -126,6 +126,13 @@ def review_generated(request, doc_id):
         'groq_active': (LLM_LAST_SOURCE == 'groq')
     })
 
+def knowledge_garden_view(request):
+    """
+    Render the knowledge garden page.
+    Shows student's plant growth based on accumulated XP.
+    """
+    return render(request, 'polls/knowledge_garden.html')
+
 
 def poll_display(request, poll_id):
     poll = get_object_or_404(Poll, id=poll_id)
