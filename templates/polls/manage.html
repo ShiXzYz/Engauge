@@ -2,7 +2,7 @@
 {% block title %}Manage polls{% endblock %}
 {% block content %}
   <h2>Polls</h2>
-  <p>Share the "Student link" with your class to let them vote; open "Results" to view responses.</p>
+  <p>Share the <strong><a href="{% url 'polls:student_poll' %}" target="_blank" style="font-size: 1.2em; color: #667eea;">Student Poll Page</a></strong> with your class to let them vote. The most recent poll is shown automatically.</p>
   <table border="1" cellpadding="6" cellspacing="0">
     <thead>
       <tr>

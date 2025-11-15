@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engauge - Student Poll</title>
+    <link rel="stylesheet" href="{% static 'polls/css/students.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div id="poll-container">
+            <div id="loading">Loading poll...</div>
+            
+            <div id="poll-content" style="display: none;">
+                <h2 id="question-text"></h2>
+                <div id="choices-container"></div>
+            </div>
+
+            <div id="submitted-view" style="display: none;">
+                <h3>✓ Thanks! Your answer was recorded.</h3>
+                <div id="xp-message"></div>
+
+                <div style="text-align: center; margin-top: 24px;">
+                    <a href="{% url 'polls:knowledge_garden' %}" class="garden-btn">
+                        View Your Knowledge Garden 🌱
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'polls/js/student-polls.js' %}"></script>
+</body>
+</html>

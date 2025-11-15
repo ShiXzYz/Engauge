@@ -2,7 +2,10 @@
 {% block title %}Home{% endblock %}
 {% block content %}
   <h2>Recent uploads</h2>
-  <p><a href="{% url 'polls:manage_polls' %}">Manage polls</a></p>
+  <p>
+    <a href="{% url 'polls:manage_polls' %}">Manage polls</a> |
+    <a href="{% url 'polls:student_poll' %}" target="_blank" style="color: #667eea; font-weight: bold;">Student Poll Page</a>
+  </p>
   <ul>
     {% for d in documents %}
       <li><a href="{% url 'polls:review_generated' doc_id=d.id %}">{{ d.title }}</a> - {{ d.uploaded_at }}</li>
