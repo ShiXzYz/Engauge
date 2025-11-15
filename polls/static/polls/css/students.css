@@ -1,0 +1,134 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    width: 100%;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    padding: 40px;
+}
+
+#loading {
+    text-align: center;
+    font-size: 18px;
+    color: #666;
+}
+
+#question-text {
+    font-size: 24px;
+    color: #2d3748;
+    margin-bottom: 24px;
+    line-height: 1.4;
+}
+
+.choice-btn {
+    width: 100%;
+    padding: 16px 24px;
+    margin: 12px 0;
+    font-size: 18px;
+    background: #f7fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.choice-btn:hover {
+    background: #edf2f7;
+    border-color: #667eea;
+    transform: translateY(-2px);
+}
+
+.choice-btn:active {
+    transform: translateY(0);
+}
+
+#submitted-view h3 {
+    color: #38a169;
+    font-size: 28px;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+#xp-message {
+    text-align: center;
+    font-size: 18px;
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 24px;
+}
+
+/* Garden Button */
+.garden-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 16px 32px;
+    text-decoration: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.garden-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+}
+
+/* Animations */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.4s ease;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+    .container {
+        padding: 24px;
+    }
+    
+    #question-text {
+        font-size: 20px;
+    }
+    
+    .choice-btn {
+        font-size: 16px;
+        padding: 14px 20px;
+    }
+    
+    #plant-visual {
+        font-size: 80px;
+    }
+    
+    .garden-stats {
+        flex-direction: column;
+        gap: 12px;
+    }
+}

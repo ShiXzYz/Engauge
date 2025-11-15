@@ -2,6 +2,13 @@ import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
 from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+import json
+
+from .forms import UploadForm
+from .models import Document, GeneratedQuestion, Poll, PollResponse
 from .forms import UploadForm, CourseCreateForm, JoinClassForm, RegisterForm
 from .models import (
     Document,
@@ -21,6 +28,9 @@ from .llm_client import (
     LAST_SOURCE as LLM_LAST_SOURCE,
     LAST_ERROR as LLM_LAST_ERROR,
 )
+
+
+# ========== EXISTING VIEWS ==========
 
 def index(request):
     # Default landing. For professors, show their uploads; for others, a simple welcome.
@@ -183,6 +193,13 @@ def review_generated(request, doc_id):
         'rejected_questions': rejected_questions,
         'groq_active': (LLM_LAST_SOURCE == 'groq')
     })
+
+def knowledge_garden_view(request):
+    """
+    Render the knowledge garden page.
+    Shows student's plant growth based on accumulated XP.
+    """
+    return render(request, 'polls/knowledge_garden.html')
 
 
 def poll_display(request, poll_id):
@@ -505,6 +522,10 @@ def toggle_poll_active(request, poll_id):
     poll = get_object_or_404(Poll, id=poll_id)
     if request.method == 'POST':
         poll.active = not poll.active
+        # Reset countdown when deactivating
+        if not poll.active:
+            poll.countdown_started = False
+            poll.countdown_start_time = None
         poll.save()
         status = "activated" if poll.active else "deactivated"
         messages.success(request, f'Poll "{poll.question_text[:50]}" has been {status}.')
@@ -525,3 +546,34 @@ def delete_document(request, doc_id):
         doc.delete()
         messages.success(request, f'Document "{doc.title}" has been deleted.')
     return redirect('polls:index')
+
+
+def start_countdown(request, poll_id):
+    from django.utils import timezone
+    poll = get_object_or_404(Poll, id=poll_id)
+    if request.method == 'POST':
+        poll.countdown_started = True
+        poll.countdown_start_time = timezone.now()
+        poll.save()
+        messages.success(request, 'Countdown started! Students will see the 3-2-1-GO countdown.')
+    return redirect('polls:poll_results', poll_id=poll.id)
+
+
+def toggle_ticket_active(request, ticket_id):
+    from .models import ExitTicket
+    ticket = get_object_or_404(ExitTicket, id=ticket_id)
+    if request.method == 'POST':
+        ticket.active = not ticket.active
+        ticket.save()
+        status = "activated" if ticket.active else "deactivated"
+        messages.success(request, f'Exit ticket "{ticket.prompt_text[:50]}" has been {status}.')
+    return redirect('polls:manage_polls')
+
+
+def delete_ticket(request, ticket_id):
+    from .models import ExitTicket
+    ticket = get_object_or_404(ExitTicket, id=ticket_id)
+    if request.method == 'POST':
+        ticket.delete()
+        messages.success(request, f'Exit ticket "{ticket.prompt_text[:50]}" has been deleted.')
+    return redirect('polls:manage_polls')

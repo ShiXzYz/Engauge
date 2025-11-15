@@ -96,6 +96,7 @@
       <th>Active</th>
       <th>Student link</th>
       <th>Results</th>
+      <th>Actions</th>
     </tr>
   </thead>
 
@@ -106,43 +107,46 @@
       box-shadow:0 3px 10px rgba(0,0,0,0.06);
       border-radius:10px;
     ">
-      <td style="padding:0.8rem 1rem;">{{ t.prompt_text|truncatechars:120 }}</td>
+      <td style="padding:0.8rem 1rem;">{{ t.prompt_text|truncatechars:100 }}</td>
+      <td style="padding:0.8rem 1rem;">{{ t.created_at|date:"M d, Y" }}</td>
+      <td style="padding:0.8rem 1rem;">{{ t.active|yesno:"Yes,No" }}</td>
 
       <td style="padding:0.8rem 1rem;">
-        {{ t.created_at|date:"M d, Y" }}
-      </td>
-
-      <td style="padding:0.8rem 1rem;">
-        <span style="
-          padding:0.2rem 0.6rem;
-          border-radius:8px;
-          font-size:0.85rem;
-          font-weight:600;
-          color:{% if t.active %}#065f46{% else %}#92400e{% endif %};
-          background:{% if t.active %}#d1fae5{% else %}#fef3c7{% endif %};
-        ">
-          {% if t.active %}Active{% else %}Inactive{% endif %}
-        </span>
-      </td>
-
-      <td style="padding:0.8rem 1rem;">
-        <a href="{% url 'polls:exit_ticket_display' ticket_id=t.id %}"
-           target="_blank"
-           style="color:#6366f1; font-weight:600; text-decoration:none;">
-          Open
-        </a>
+        <a href="{% url 'polls:exit_ticket_display' ticket_id=t.id %}" target="_blank"
+           style="color:#6366f1; font-weight:600; text-decoration:none;">Open</a>
       </td>
 
       <td style="padding:0.8rem 1rem;">
         <a href="{% url 'polls:exit_ticket_results' ticket_id=t.id %}"
-           style="color:#4f46e5; font-weight:600; text-decoration:none;">
-          Results
-        </a>
+           style="color:#4f46e5; font-weight:600; text-decoration:none;">Results</a>
+      </td>
+
+      <td style="padding:0.8rem 1rem;">
+        <form method="post"
+              action="{% url 'polls:toggle_ticket_active' ticket_id=t.id %}"
+              style="display:inline; margin-right:1rem;">
+          {% csrf_token %}
+          <button type="submit"
+            style="background:none; border:none; color:{% if t.active %}#d97706{% else %}#059669{% endif %}; cursor:pointer; font-weight:600;">
+            {% if t.active %}Deactivate{% else %}Activate{% endif %}
+          </button>
+        </form>
+
+        <form method="post"
+              action="{% url 'polls:delete_ticket' ticket_id=t.id %}"
+              style="display:inline;"
+              onsubmit="return confirm('Delete this exit ticket?');">
+          {% csrf_token %}
+          <button type="submit"
+            style="background:none; border:none; color:#dc2626; cursor:pointer; font-weight:600;">
+            Delete
+          </button>
+        </form>
       </td>
     </tr>
     {% empty %}
     <tr>
-      <td colspan="5" style="padding:1rem; text-align:center; color:#6b7280;">
+      <td colspan="6" style="padding:1rem; text-align:center; color:#6b7280;">
         No exit tickets yet.
       </td>
     </tr>

@@ -44,6 +44,8 @@ class Poll(models.Model):
     question_format = models.CharField(max_length=20, choices=FORMAT_CHOICES, default='single_choice')
     correct_answer = models.IntegerField(null=True, blank=True)  # For team_battle: index of correct choice
     active = models.BooleanField(default=False)
+    countdown_started = models.BooleanField(default=False)  # For speed_ranking: whether countdown has started
+    countdown_start_time = models.DateTimeField(null=True, blank=True)  # For speed_ranking: when countdown started
     # Optional link to a course
     course = models.ForeignKey('Course', null=True, blank=True, on_delete=models.CASCADE, related_name='polls')
     created_at = models.DateTimeField(default=timezone.now)

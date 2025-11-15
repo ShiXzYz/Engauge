@@ -140,7 +140,13 @@
   <body>
     <header>
       <div class="container">
-        <h1><a href="/">Engauge</a></h1>
+        <h1>
+          {% if hide_nav %}
+            <a href="{% url 'polls:knowledge_garden' %}">Engauge</a>
+          {% else %}
+            <a href="/">Engauge</a>
+          {% endif %}
+        </h1>
 
         {% if not hide_nav %}
         <nav>
