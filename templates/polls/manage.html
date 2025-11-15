@@ -17,7 +17,7 @@
       <th>Question</th>
       <th>Type</th>
       <th>Created</th>
-      <th>Active</th>
+  <th>Open</th>
       <th>Student link</th>
       <th>Results</th>
       <th>Actions</th>
@@ -33,7 +33,7 @@
       <td style="padding:0.8rem 1rem;">{{ p.question_text|truncatechars:100 }}</td>
       <td style="padding:0.8rem 1rem;">{{ p.get_question_format_display }}</td>
       <td style="padding:0.8rem 1rem;">{{ p.created_at|date:"M d, Y" }}</td>
-      <td style="padding:0.8rem 1rem;">{{ p.active|yesno:"Yes,No" }}</td>
+  <td style="padding:0.8rem 1rem;">{{ p.active|yesno:"Yes,No" }}</td>
 
       <td style="padding:0.8rem 1rem;">
         <a href="{% url 'polls:poll_display' poll_id=p.id %}" target="_blank"
@@ -46,8 +46,8 @@
       </td>
 
       <td style="padding:0.8rem 1rem;">
-        <form method="post"
-              action="{% url 'polls:toggle_poll_active' poll_id=p.id %}"
+    <form method="post"
+      action="{% url 'polls:toggle_poll_active' poll_id=p.id %}"
               style="display:inline; margin-right:1rem;">
           {% csrf_token %}
           <button type="submit"
