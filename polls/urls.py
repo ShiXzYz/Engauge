@@ -11,4 +11,8 @@ urlpatterns = [
     path('poll/<uuid:poll_id>/', views.poll_display, name='poll_display'),
     path('poll/<uuid:poll_id>/vote/', views.poll_vote, name='poll_vote'),
     path('poll/<uuid:poll_id>/results/', views.poll_results, name='poll_results'),
+    # exit tickets
+    path('exit/<uuid:ticket_id>/', views.exit_ticket_display, name='exit_ticket_display'),
+    path('exit/<uuid:ticket_id>/submit/', views.exit_ticket_submit, name='exit_ticket_submit'),
+    path('exit/<uuid:ticket_id>/results/', views.exit_ticket_results, name='exit_ticket_results'),
 ]

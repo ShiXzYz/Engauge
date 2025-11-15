@@ -12,18 +12,22 @@
           <input type="hidden" name="question_id" value="{{ q.id }}" />
           <label>Question text</label>
           <textarea name="text" rows="3" style="width:100%">{{ q.text }}</textarea>
-          <div>
-            <label>Choices (4):</label>
-            {% for c in q.choices %}
-              <div><input type="text" name="choice_{{ forloop.counter0 }}" value="{{ c }}" style="width:100%" /></div>
-            {% endfor %}
-            {% for i in q.choices|length|add:'0'|make_list %}{% endfor %}
-            {% if q.choices|length < 4 %}
-              {% for i in "0123"|slice:q.choices|length %}{% endfor %}
-            {% endif %}
-          </div>
+          {% if q.kind == 'mcq' %}
+            <div>
+              <label>Choices (4):</label>
+              {% for c in q.choices %}
+                <div><input type="text" name="choice_{{ forloop.counter0 }}" value="{{ c }}" style="width:100%" /></div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p><em>Exit ticket (short response). No choices required.</em></p>
+          {% endif %}
           <div style="margin-top:.5rem">
-            <button name="action" value="accept">Accept & create poll</button>
+            {% if q.kind == 'mcq' %}
+              <button name="action" value="accept">Accept & create poll</button>
+            {% else %}
+              <button name="action" value="accept">Accept & create exit ticket</button>
+            {% endif %}
             <button name="action" value="reject">Reject</button>
           </div>
         </form>

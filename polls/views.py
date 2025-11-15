@@ -6,6 +6,7 @@ from .models import Document, GeneratedQuestion, Poll, PollResponse
 from .utils import extract_text_from_file
 from .llm_client import (
     generate_questions_from_text,
+    generate_exit_tickets_from_text,
     LAST_SOURCE as LLM_LAST_SOURCE,
     LAST_ERROR as LLM_LAST_ERROR,
 )
@@ -24,19 +25,23 @@ def upload_document(request):
             doc = Document.objects.create(file=f, title=title)
             # extract text
             text = extract_text_from_file(doc.file.path)
-            # call Claude to generate questions
-            generated = generate_questions_from_text(text)
-            for item in generated:
-                GeneratedQuestion.objects.create(document=doc, text=item.get('text'), choices=item.get('choices', []))
+            # generate multiple-choice questions
+            generated_mcq = generate_questions_from_text(text)
+            for item in generated_mcq:
+                GeneratedQuestion.objects.create(document=doc, text=item.get('text'), choices=item.get('choices', []), kind='mcq')
+            # generate exit ticket prompts (short response)
+            generated_exit = generate_exit_tickets_from_text(text, max_tickets=3)
+            for item in generated_exit:
+                GeneratedQuestion.objects.create(document=doc, text=item.get('text'), choices=[], kind='exit')
             if LLM_LAST_SOURCE == 'groq':
-                messages.success(request, f"Generated {len(generated)} questions using Groq.")
+                messages.success(request, f"Generated {len(generated_mcq)} MCQs and {len(generated_exit)} exit tickets using Groq.")
             else:
                 has_key = bool(os.getenv('GROQ_API_KEY'))
                 if not has_key:
-                    messages.warning(request, "No GROQ_API_KEY found. Using mock questions.")
+                    messages.warning(request, "No GROQ_API_KEY found. Using mock MCQs and exit tickets.")
                 else:
                     err = LLM_LAST_ERROR or 'Unknown error'
-                    messages.error(request, f"Groq API call failed: {err}. Using mock questions.")
+                    messages.error(request, f"Groq API call failed: {err}. Using mock MCQs and exit tickets.")
             return redirect('polls:review_generated', doc_id=doc.id)
     else:
         form = UploadForm()
@@ -54,21 +59,27 @@ def review_generated(request, doc_id):
         new_text = request.POST.get('text')
         if new_text:
             q.text = new_text.strip()
-        # collect any posted choices in order: choice_0..choice_9 (cap)
-        new_choices = []
-        for i in range(10):
-            key = f'choice_{i}'
-            if key in request.POST:
-                val = request.POST.get(key, '').strip()
-                if val:
-                    new_choices.append(val)
-        if new_choices:
-            q.choices = new_choices[:4]
+        # collect posted choices only for MCQ
+        if q.kind == 'mcq':
+            new_choices = []
+            for i in range(10):
+                key = f'choice_{i}'
+                if key in request.POST:
+                    val = request.POST.get(key, '').strip()
+                    if val:
+                        new_choices.append(val)
+            if new_choices:
+                q.choices = new_choices[:4]
         if action == 'accept':
             q.status = 'accepted'
             q.save()
-            # create poll
-            Poll.objects.create(question_text=q.text, choices=q.choices)
+            if q.kind == 'mcq':
+                # create poll
+                Poll.objects.create(question_text=q.text, choices=q.choices)
+            else:
+                # create exit ticket
+                from .models import ExitTicket
+                ExitTicket.objects.create(prompt_text=q.text)
             return redirect('polls:manage_polls')
         else:
             q.status = 'rejected'
@@ -107,4 +118,31 @@ def poll_results(request, poll_id):
 
 def manage_polls(request):
     polls = Poll.objects.order_by('-created_at')
-    return render(request, 'polls/manage.html', {'polls': polls})
+    from .models import ExitTicket
+    tickets = ExitTicket.objects.order_by('-created_at')
+    return render(request, 'polls/manage.html', {'polls': polls, 'tickets': tickets})
+
+
+def exit_ticket_display(request, ticket_id):
+    from .models import ExitTicket
+    ticket = get_object_or_404(ExitTicket, id=ticket_id)
+    return render(request, 'polls/exit_ticket_display.html', {'ticket': ticket})
+
+
+def exit_ticket_submit(request, ticket_id):
+    from .models import ExitTicket, ExitTicketResponse
+    ticket = get_object_or_404(ExitTicket, id=ticket_id)
+    if request.method == 'POST':
+        answer = (request.POST.get('answer') or '').strip()
+        if answer:
+            ExitTicketResponse.objects.create(ticket=ticket, answer=answer)
+            return redirect('polls:exit_ticket_results', ticket_id=ticket.id)
+    return redirect('polls:exit_ticket_display', ticket_id=ticket.id)
+
+
+def exit_ticket_results(request, ticket_id):
+    from .models import ExitTicket
+    ticket = get_object_or_404(ExitTicket, id=ticket_id)
+    responses = ticket.responses.order_by('-created_at')[:200]
+    total = ticket.responses.count()
+    return render(request, 'polls/exit_ticket_results.html', {'ticket': ticket, 'responses': responses, 'total': total})
