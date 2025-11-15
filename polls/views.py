@@ -68,7 +68,8 @@ def review_generated(request, doc_id):
             q.status = 'accepted'
             q.save()
             # create poll
-            Poll.objects.create(question_text=q.text, choices=q.choices)
+            question_format = request.POST.get('question_format', 'single_choice')
+            Poll.objects.create(question_text=q.text, choices=q.choices, question_format=question_format)
             return redirect('polls:manage_polls')
         else:
             q.status = 'rejected'
@@ -83,33 +84,110 @@ def review_generated(request, doc_id):
 
 def poll_display(request, poll_id):
     poll = get_object_or_404(Poll, id=poll_id)
-    return render(request, 'polls/poll_display.html', {'poll': poll})
+    return render(request, 'polls/poll_display.html', {'poll': poll, 'hide_nav': True})
 
 
 def poll_vote(request, poll_id):
     poll = get_object_or_404(Poll, id=poll_id)
     if request.method == 'POST':
-        choice = int(request.POST.get('choice'))
-        PollResponse.objects.create(poll=poll, choice=choice)
+        if poll.question_format == 'single_choice':
+            # Single choice: store the choice index as an integer
+            choice = int(request.POST.get('choice'))
+        elif poll.question_format == 'speed_ranking':
+            # Speed ranking: collect all ranks and create a list ordered by rank
+            # rank_0, rank_1, rank_2, rank_3 contain the rank values (1-4)
+            num_choices = len(poll.choices)
+            rankings = []
+            rank_values = []
+            for i in range(num_choices):
+                rank_value = int(request.POST.get(f'rank_{i}'))
+                rank_values.append(rank_value)
+                rankings.append((rank_value, i))  # (rank, choice_index)
+
+            # Server-side validation: check for duplicate ranks
+            if len(rank_values) != len(set(rank_values)):
+                messages.error(request, 'Error: Each choice must have a unique rank. Please try again.')
+                return redirect('polls:poll_display', poll_id=poll.id)
+
+            # Sort by rank (1st, 2nd, 3rd, 4th) and extract choice indices
+            rankings.sort(key=lambda x: x[0])
+            choice = [choice_idx for _, choice_idx in rankings]
+        else:
+            choice = None
+
+        if choice is not None:
+            PollResponse.objects.create(poll=poll, choice=choice)
         return redirect('polls:poll_submitted', poll_id=poll.id)
     return redirect('polls:poll_display', poll_id=poll.id)
 
 
 def poll_submitted(request, poll_id):
     poll = get_object_or_404(Poll, id=poll_id)
-    return render(request, 'polls/submitted.html', {'poll': poll})
+    return render(request, 'polls/submitted.html', {'poll': poll, 'hide_nav': True})
 
 
 def poll_results(request, poll_id):
     poll = get_object_or_404(Poll, id=poll_id)
-    counts_list = []
-    for i, _ in enumerate(poll.choices):
-        counts_list.append(poll.responses.filter(choice=i).count())
-    paired = list(zip(poll.choices, counts_list))
-    total = sum(counts_list)
-    return render(request, 'polls/results.html', {'poll': poll, 'paired': paired, 'total': total})
+    total = poll.responses.count()
+
+    if poll.question_format == 'single_choice':
+        # Count votes for each choice
+        counts_list = []
+        for i, _ in enumerate(poll.choices):
+            counts_list.append(poll.responses.filter(choice=i).count())
+        paired = list(zip(poll.choices, counts_list))
+        return render(request, 'polls/results.html', {
+            'poll': poll,
+            'paired': paired,
+            'total': total,
+            'format': 'single_choice'
+        })
+
+    elif poll.question_format == 'speed_ranking':
+        # For ranking: calculate how many times each choice was ranked at each position
+        num_choices = len(poll.choices)
+        # rank_counts[choice_idx][rank_position] = count
+        rank_counts = [[0] * num_choices for _ in range(num_choices)]
+
+        for response in poll.responses.all():
+            ranking = response.choice  # List of choice indices in rank order
+            for rank_pos, choice_idx in enumerate(ranking):
+                rank_counts[choice_idx][rank_pos] += 1
+
+        # Calculate average rank for each choice (lower is better)
+        avg_ranks = []
+        for choice_idx in range(num_choices):
+            total_rank = sum((rank_pos + 1) * count for rank_pos, count in enumerate(rank_counts[choice_idx]))
+            avg_rank = total_rank / total if total > 0 else 0
+            avg_ranks.append(avg_rank)
+
+        results_data = []
+        for i, choice_text in enumerate(poll.choices):
+            results_data.append({
+                'choice': choice_text,
+                'rank_counts': rank_counts[i],
+                'avg_rank': round(avg_ranks[i], 2)
+            })
+
+        return render(request, 'polls/results.html', {
+            'poll': poll,
+            'results_data': results_data,
+            'total': total,
+            'format': 'speed_ranking',
+            'num_choices': num_choices
+        })
+
+    return render(request, 'polls/results.html', {'poll': poll, 'total': 0})
 
 
 def manage_polls(request):
     polls = Poll.objects.order_by('-created_at')
     return render(request, 'polls/manage.html', {'polls': polls})
+
+
+def delete_poll(request, poll_id):
+    poll = get_object_or_404(Poll, id=poll_id)
+    if request.method == 'POST':
+        poll.delete()
+        messages.success(request, f'Poll "{poll.question_text[:50]}" has been deleted.')
+    return redirect('polls:manage_polls')

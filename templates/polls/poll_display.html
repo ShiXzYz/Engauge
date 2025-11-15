@@ -2,19 +2,83 @@
 {% block title %}Poll{% endblock %}
 {% block content %}
   <h2>Poll</h2>
-  <form method="post" action="{% url 'polls:poll_vote' poll_id=poll.id %}">
+  <form method="post" action="{% url 'polls:poll_vote' poll_id=poll.id %}" id="pollForm">
     {% csrf_token %}
     <p>{{ poll.question_text }}</p>
-    <ul>
-    {% for c in poll.choices %}
-      <li>
-        <label>
-          <input type="radio" name="choice" value="{{ forloop.counter0 }}" required />
-          {{ c }}
-        </label>
-      </li>
-    {% endfor %}
-    </ul>
-    <button type="submit">Submit</button>
+
+    {% if poll.question_format == 'single_choice' %}
+      <ul>
+      {% for c in poll.choices %}
+        <li>
+          <label>
+            <input type="radio" name="choice" value="{{ forloop.counter0 }}" required />
+            {{ c }}
+          </label>
+        </li>
+      {% endfor %}
+      </ul>
+    {% elif poll.question_format == 'speed_ranking' %}
+      <p><em>Rank the choices from 1 to {{ poll.choices|length }}. Each choice must have a unique rank.</em></p>
+      <div id="errorMessage" style="color:red; font-weight:bold; margin-bottom:1rem; display:none;"></div>
+      <table style="width:100%; max-width:600px">
+        <thead>
+          <tr>
+            <th style="text-align:left">Choice</th>
+            <th style="text-align:left">Rank</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for c in poll.choices %}
+          <tr>
+            <td style="padding:.5rem 0">{{ c }}</td>
+            <td>
+              <select name="rank_{{ forloop.counter0 }}" class="rank-select" required style="width:80px">
+                <option value="">--</option>
+                {% for i in poll.choices %}
+                  <option value="{{ forloop.counter }}">{{ forloop.counter }}</option>
+                {% endfor %}
+              </select>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    <button type="submit" style="margin-top:1rem">Submit</button>
   </form>
+
+  {% if poll.question_format == 'speed_ranking' %}
+  <script>
+    document.getElementById('pollForm').addEventListener('submit', function(e) {
+      var selects = document.querySelectorAll('.rank-select');
+      var ranks = [];
+      var errorDiv = document.getElementById('errorMessage');
+
+      // Collect all selected ranks
+      for (var i = 0; i < selects.length; i++) {
+        var value = selects[i].value;
+        if (!value) {
+          errorDiv.textContent = 'Please select a rank for all choices.';
+          errorDiv.style.display = 'block';
+          e.preventDefault();
+          return;
+        }
+        ranks.push(value);
+      }
+
+      // Check for duplicates
+      var uniqueRanks = new Set(ranks);
+      if (uniqueRanks.size !== ranks.length) {
+        errorDiv.textContent = 'Error: Each choice must have a unique rank. You cannot use the same rank twice.';
+        errorDiv.style.display = 'block';
+        e.preventDefault();
+        return;
+      }
+
+      // Hide error if validation passes
+      errorDiv.style.display = 'none';
+    });
+  </script>
+  {% endif %}
 {% endblock %}

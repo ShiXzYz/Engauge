@@ -27,9 +27,14 @@ class GeneratedQuestion(models.Model):
 
 
 class Poll(models.Model):
+    FORMAT_CHOICES = [
+        ('single_choice', 'Single Choice'),
+        ('speed_ranking', 'Speed Ranking'),
+    ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     question_text = models.TextField()
     choices = models.JSONField(default=list)
+    question_format = models.CharField(max_length=20, choices=FORMAT_CHOICES, default='single_choice')
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
 
@@ -40,8 +45,8 @@ class Poll(models.Model):
 class PollResponse(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     poll = models.ForeignKey(Poll, on_delete=models.CASCADE, related_name='responses')
-    choice = models.IntegerField()
+    choice = models.JSONField()  # For single_choice: int, For speed_ranking: list of ints [rank1_idx, rank2_idx, ...]
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        indexes = [models.Index(fields=['poll', 'choice'])]
+        indexes = [models.Index(fields=['poll'])]

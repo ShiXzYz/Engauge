@@ -2,12 +2,44 @@
 {% block title %}Results{% endblock %}
 {% block content %}
   <h2>Results</h2>
-  <p>{{ poll.question_text }}</p>
-  <ul>
-    {% for c, n in paired %}
-      <li>{{ c }} — {{ n }} vote{{ n|pluralize }}</li>
-    {% endfor %}
-  </ul>
-  <p>Total responses: {{ total }}</p>
+  <p><strong>{{ poll.question_text }}</strong></p>
+
+  {% if format == 'single_choice' %}
+    <h3>Vote Counts</h3>
+    <ul>
+      {% for c, n in paired %}
+        <li>{{ c }} — {{ n }} vote{{ n|pluralize }}</li>
+      {% endfor %}
+    </ul>
+    <p>Total responses: {{ total }}</p>
+
+  {% elif format == 'speed_ranking' %}
+    <h3>Ranking Results</h3>
+    <p>Total responses: {{ total }}</p>
+    <table style="border-collapse:collapse; width:100%; max-width:800px; margin-top:1rem">
+      <thead>
+        <tr style="border-bottom:2px solid #333">
+          <th style="text-align:left; padding:.5rem">Choice</th>
+          {% for i in num_choices|make_list %}
+            <th style="text-align:center; padding:.5rem">Rank {{ forloop.counter }}</th>
+          {% endfor %}
+          <th style="text-align:center; padding:.5rem">Avg Rank</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in results_data %}
+        <tr style="border-bottom:1px solid #ccc">
+          <td style="padding:.5rem">{{ item.choice }}</td>
+          {% for count in item.rank_counts %}
+            <td style="text-align:center; padding:.5rem">{{ count }}</td>
+          {% endfor %}
+          <td style="text-align:center; padding:.5rem; font-weight:bold">{{ item.avg_rank }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p style="margin-top:1rem"><em>Lower average rank is better (1 is best).</em></p>
+  {% endif %}
+
   <p><a href="{% url 'polls:manage_polls' %}">Back to Manage polls</a></p>
 {% endblock %}

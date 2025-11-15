@@ -12,10 +12,12 @@
   <body>
     <header>
       <h1><a href="/">Engauge</a></h1>
+      {% if not hide_nav %}
       <nav>
         <a href="/upload/">Upload document</a> |
         <a href="/manage/">Manage polls</a>
       </nav>
+      {% endif %}
       <hr />
     </header>
     {% if messages %}
