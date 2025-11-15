@@ -75,7 +75,10 @@
         <div class="garden-area">
             <div class="garden-header-desktop">
                 <h1>Your Knowledge Garden</h1>
-                <a href="{% url 'polls:student_poll' %}" class="back-btn">← Back to Polls</a>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button id="reset-garden-btn" class="reset-btn" title="Reset your garden">🔄 Reset Garden</button>
+                    <a href="{% url 'polls:student_poll' %}" class="back-btn">← Back to Polls</a>
+                </div>
             </div>
 
             <div class="greenhouse">

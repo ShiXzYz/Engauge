@@ -271,10 +271,28 @@ body {
     border-radius: 8px;
     font-weight: 600;
     transition: background 0.2s;
+    border: none;
+    cursor: pointer;
 }
 
 .back-btn:hover {
     background: #5568d3;
+}
+
+.reset-btn {
+    background: #dc3545;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 14px;
+}
+
+.reset-btn:hover {
+    background: #c82333;
 }
 
 /* Greenhouse */
@@ -282,37 +300,22 @@ body {
     flex: 1;
     background-image: url('/static/polls/images/greenhouse-background.jpg');
     background-size: cover;
-    background-position: center;
+    background-position: center bottom;
     background-repeat: no-repeat;
     border-radius: 16px;
     padding: 40px;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
+    padding-bottom: 100px;
     box-shadow:
         inset 0 -20px 40px rgba(139, 115, 85, 0.3),
         0 8px 24px rgba(0, 0, 0, 0.15);
     position: relative;
-    min-height: 600px;
-}
-
-/* Fallback gradient if background image not loaded */
-.greenhouse::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(to bottom,
-        rgba(135, 206, 235, 0.3) 0%,
-        rgba(152, 216, 232, 0.3) 40%,
-        rgba(143, 188, 143, 0.5) 70%,
-        #8B7355 100%
-    );
-    border-radius: 16px;
-    z-index: 0;
-    pointer-events: none;
+    min-height: 700px;
+    aspect-ratio: 1;
+    max-width: 800px;
+    margin: 0 auto;
 }
 
 /* 3x3 Plant Grid */
@@ -333,21 +336,78 @@ body {
     justify-content: center;
     position: relative;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: all 0.3s ease;
+    border-radius: 50%;
+}
+
+/* Glow effect for all plant cells */
+.plant-cell::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.plant-cell:hover::before {
+    opacity: 1;
+}
+
+/* Empty cells get a plus sign */
+.plant-cell.empty::after {
+    content: '+';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    color: rgba(139, 115, 85, 0.3);
+    font-weight: 300;
+    pointer-events: none;
+    z-index: 1;
+    transition: all 0.3s ease;
+}
+
+.plant-cell.empty:hover::after {
+    color: rgba(107, 142, 35, 0.6);
+    transform: translate(-50%, -50%) scale(1.2);
 }
 
 .plant-cell.can-water {
     cursor: pointer;
 }
 
+.plant-cell.can-water::before {
+    background: radial-gradient(circle, rgba(129, 212, 250, 0.5) 0%, transparent 70%);
+    opacity: 1;
+    animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
 .plant-cell.can-water:hover {
-    transform: scale(1.05);
+    transform: scale(1.08);
 }
 
 .plant-cell.empty.drag-over {
-    background: radial-gradient(circle, rgba(107, 142, 35, 0.4) 0%, transparent 70%);
-    border: 2px dashed rgba(107, 142, 35, 0.8);
-    border-radius: 50%;
+    background: radial-gradient(circle, rgba(107, 142, 35, 0.3) 0%, transparent 70%);
+}
+
+.plant-cell.empty.drag-over::before {
+    background: radial-gradient(circle, rgba(107, 142, 35, 0.6) 0%, transparent 70%);
+    opacity: 1;
+}
+
+.plant-cell.empty.drag-over::after {
+    color: rgba(107, 142, 35, 0.8);
+    transform: translate(-50%, -50%) scale(1.3);
 }
 
 .plant-sprite {
@@ -359,6 +419,8 @@ body {
     image-rendering: crisp-edges;
     filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
     transition: transform 0.3s ease;
+    position: relative;
+    z-index: 3;
 }
 
 .plant-cell.growing .plant-sprite {
@@ -387,6 +449,8 @@ body {
     line-height: 1;
     text-align: center;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    position: relative;
+    z-index: 3;
 }
 
 /* ============ PARTICLES ============ */

@@ -2,7 +2,7 @@
 (function() {
     // Constants
     const GRID_SIZE = 9; // 3x3 grid
-    const MAX_STAGE = 5; // 6 stages total: 0 (empty) to 5 (blooming)
+    const MAX_STAGE = 4; // 5 stages total: 0 (empty) to 4 (blooming)
     const XP_PER_ANSWER = 10;
     const XP_TO_WATER = 50; // Need 50 XP to water a plant
 
@@ -12,8 +12,7 @@
         1: { name: 'Planted Seed', emoji: '🌱', file: 'plant-stage-1.png' },
         2: { name: 'Sprout', emoji: '🌿', file: 'plant-stage-2.png' },
         3: { name: 'Seedling', emoji: '☘️', file: 'plant-stage-3.png' },
-        4: { name: 'Sapling', emoji: '🪴', file: 'plant-stage-4.png' },
-        5: { name: 'Blooming', emoji: '🌸', file: 'plant-stage-5.png' }
+        4: { name: 'Blooming', emoji: '🌸', file: 'plant-stage-4.png' }
     };
 
     // DOM Elements
@@ -525,11 +524,34 @@
     `;
     document.head.appendChild(style);
 
+    // Reset garden button
+    function setupResetButton() {
+        const resetBtn = document.getElementById('reset-garden-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to reset your entire garden? This will delete all plants and XP!')) {
+                    // Clear all localStorage
+                    localStorage.removeItem('engauge_garden_state');
+                    localStorage.removeItem('engauge_xp');
+                    localStorage.removeItem('engauge_current_water_xp');
+                    localStorage.removeItem('engauge_plant_level');
+
+                    // Reload page
+                    location.reload();
+                }
+            });
+        }
+    }
+
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initGarden);
+        document.addEventListener('DOMContentLoaded', () => {
+            initGarden();
+            setupResetButton();
+        });
     } else {
         initGarden();
+        setupResetButton();
     }
 
     // Refresh garden every 3 seconds (check for new XP from polls)
