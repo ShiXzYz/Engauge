@@ -47,6 +47,16 @@
 
       <td style="padding:0.8rem 1rem;">
         <form method="post"
+              action="{% url 'polls:toggle_poll_active' poll_id=p.id %}"
+              style="display:inline; margin-right:1rem;">
+          {% csrf_token %}
+          <button type="submit"
+            style="background:none; border:none; color:{% if p.active %}#d97706{% else %}#059669{% endif %}; cursor:pointer; font-weight:600;">
+            {% if p.active %}Deactivate{% else %}Activate{% endif %}
+          </button>
+        </form>
+
+        <form method="post"
               action="{% url 'polls:delete_poll' poll_id=p.id %}"
               style="display:inline;"
               onsubmit="return confirm('Delete this poll?');">

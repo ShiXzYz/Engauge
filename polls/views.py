@@ -337,6 +337,16 @@ def manage_polls(request):
     return render(request, 'polls/manage.html', {'polls': polls})
 
 
+def toggle_poll_active(request, poll_id):
+    poll = get_object_or_404(Poll, id=poll_id)
+    if request.method == 'POST':
+        poll.active = not poll.active
+        poll.save()
+        status = "activated" if poll.active else "deactivated"
+        messages.success(request, f'Poll "{poll.question_text[:50]}" has been {status}.')
+    return redirect('polls:manage_polls')
+
+
 def delete_poll(request, poll_id):
     poll = get_object_or_404(Poll, id=poll_id)
     if request.method == 'POST':
