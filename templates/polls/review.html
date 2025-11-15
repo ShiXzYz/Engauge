@@ -41,10 +41,22 @@
 
       <div style="margin-top:1rem;">
         <label style="font-weight:600;">Question Format:</label>
-        <select name="question_format"
+        <select name="question_format" id="format_{{ q.id }}"
+                onchange="toggleCorrectAnswer('{{ q.id }}')"
                 style="margin-left:0.5rem; padding:0.5rem; border-radius:8px;">
           <option value="single_choice">Single Choice</option>
           <option value="speed_ranking">Speed Ranking</option>
+          <option value="team_battle">Team Battle</option>
+        </select>
+      </div>
+
+      <div id="correct_answer_{{ q.id }}" style="margin-top:1rem; display:none;">
+        <label style="font-weight:600;">Correct Answer (for Team Battle):</label>
+        <select name="correct_answer"
+                style="margin-left:0.5rem; padding:0.5rem; border-radius:8px;">
+          {% for c in q.choices %}
+            <option value="{{ forloop.counter0 }}">{{ forloop.counter }}. {{ c }}</option>
+          {% endfor %}
         </select>
       </div>
 
@@ -67,4 +79,17 @@
 {% else %}
 <p style="color:#6b7280;">No pending questions. Upload a new document.</p>
 {% endif %}
+
+<script>
+function toggleCorrectAnswer(questionId) {
+  var formatSelect = document.getElementById('format_' + questionId);
+  var correctAnswerDiv = document.getElementById('correct_answer_' + questionId);
+
+  if (formatSelect.value === 'team_battle') {
+    correctAnswerDiv.style.display = 'block';
+  } else {
+    correctAnswerDiv.style.display = 'none';
+  }
+}
+</script>
 {% endblock %}

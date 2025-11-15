@@ -67,6 +67,163 @@
   <p style="margin-top:1rem; color:#6b7280;">
     <em>Lower average rank is better.</em>
   </p>
+
+{% elif format == 'team_battle' %}
+  <h3 style="margin-bottom:1rem;">⚔️ Team Battle Results</h3>
+  <p><strong>Total responses:</strong> {{ total }}</p>
+
+  <!-- Bar Graph Container -->
+  <div style="margin-top:2rem; max-width:700px; margin-left:auto; margin-right:auto;">
+
+    <!-- Left Side Bar -->
+    <div style="margin-bottom:2.5rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+        <h4 style="margin:0; font-size:1.3rem; font-weight:600;">← Left Side</h4>
+        <span style="font-size:1.1rem; font-weight:600; color:#3b82f6;">
+          {{ left_count }} student{{ left_count|pluralize }}
+        </span>
+      </div>
+      <div style="
+        width:100%;
+        height:60px;
+        background:#e5e7eb;
+        border-radius:12px;
+        overflow:hidden;
+        position:relative;
+      ">
+        <div style="
+          width:{% if total > 0 %}{% widthratio left_count total 100 %}{% else %}0{% endif %}%;
+          height:100%;
+          background:linear-gradient(90deg, #3b82f6, #1d4ed8);
+          transition:all 0.8s ease;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          color:white;
+          font-weight:700;
+          font-size:1.2rem;
+        ">
+          {% if left_count > 0 %}{% widthratio left_count total 100 %}%{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side Bar -->
+    <div style="margin-bottom:2.5rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+        <h4 style="margin:0; font-size:1.3rem; font-weight:600;">Right Side →</h4>
+        <span style="font-size:1.1rem; font-weight:600; color:#ef4444;">
+          {{ right_count }} student{{ right_count|pluralize }}
+        </span>
+      </div>
+      <div style="
+        width:100%;
+        height:60px;
+        background:#e5e7eb;
+        border-radius:12px;
+        overflow:hidden;
+        position:relative;
+      ">
+        <div style="
+          width:{% if total > 0 %}{% widthratio right_count total 100 %}{% else %}0{% endif %}%;
+          height:100%;
+          background:linear-gradient(90deg, #ef4444, #b91c1c);
+          transition:all 0.8s ease;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          color:white;
+          font-weight:700;
+          font-size:1.2rem;
+        ">
+          {% if right_count > 0 %}{% widthratio right_count total 100 %}%{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Reveal Button -->
+    <div style="text-align:center; margin-top:3rem;">
+      <button id="revealButton" onclick="revealWinner()" style="
+        padding:1.2rem 3rem;
+        background:linear-gradient(135deg, #fbbf24, #f59e0b);
+        color:white;
+        border:none;
+        border-radius:12px;
+        font-size:1.4rem;
+        font-weight:700;
+        cursor:pointer;
+        box-shadow:0 8px 24px rgba(251,191,36,0.4);
+        transition:all 0.3s ease;
+      " onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+        🎉 Reveal Winner
+      </button>
+    </div>
+
+    <!-- Winner Display (Hidden Initially) -->
+    <div id="winnerDisplay" style="
+      display:none;
+      margin-top:3rem;
+      padding:2rem;
+      border-radius:16px;
+      text-align:center;
+      animation:fadeInScale 0.6s ease;
+    ">
+      <h2 id="winnerText" style="font-size:2.5rem; margin:0; font-weight:700;"></h2>
+      <p id="winnerEmoji" style="font-size:4rem; margin:1rem 0;"></p>
+      <div id="scoreDetails" style="margin-top:1.5rem; font-size:1.1rem;">
+        <p style="margin:0.5rem 0;"><strong>← Left Side:</strong> {{ left_correct }}/{{ left_count }} correct ({{ left_percentage }}%)</p>
+        <p style="margin:0.5rem 0;"><strong>Right Side →:</strong> {{ right_correct }}/{{ right_count }} correct ({{ right_percentage }}%)</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function revealWinner() {
+      var winnerDisplay = document.getElementById('winnerDisplay');
+      var winnerText = document.getElementById('winnerText');
+      var winnerEmoji = document.getElementById('winnerEmoji');
+      var revealButton = document.getElementById('revealButton');
+
+      // Hide reveal button
+      revealButton.style.display = 'none';
+
+      // Determine winner and set content
+      var winner = '{{ winner }}';
+      if (winner === 'left') {
+        winnerDisplay.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+        winnerDisplay.style.color = 'white';
+        winnerText.textContent = '← Left Side Wins!';
+        winnerEmoji.textContent = '🏆';
+      } else if (winner === 'right') {
+        winnerDisplay.style.background = 'linear-gradient(135deg, #ef4444, #b91c1c)';
+        winnerDisplay.style.color = 'white';
+        winnerText.textContent = 'Right Side Wins! →';
+        winnerEmoji.textContent = '🏆';
+      } else {
+        winnerDisplay.style.background = 'linear-gradient(135deg, #6b7280, #4b5563)';
+        winnerDisplay.style.color = 'white';
+        winnerText.textContent = "It's a Tie!";
+        winnerEmoji.textContent = '🤝';
+      }
+
+      // Show winner display with animation
+      winnerDisplay.style.display = 'block';
+    }
+  </script>
+
+  <style>
+    @keyframes fadeInScale {
+      from {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+  </style>
+
 {% endif %}
 
 <div style="margin-top:1.5rem;">

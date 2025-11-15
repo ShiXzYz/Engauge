@@ -169,6 +169,70 @@
         {% endfor %}
         </tbody>
       </table>
+
+    {% elif poll.question_format == 'team_battle' %}
+      <!-- Step 1: Choose Team Side -->
+      <div id="teamSelection">
+        <p style="text-align:center; font-style:italic; margin-bottom:2rem;">
+          Step 1: Choose your team based on where you're sitting!
+        </p>
+
+        <div style="display:flex; gap:1.5rem; justify-content:center; align-items:stretch;">
+          <div onclick="selectTeam('left')" id="leftButton" style="
+            flex:1;
+            cursor:pointer;
+            padding:3rem 2rem;
+            background:linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color:white;
+            text-align:center;
+            border-radius:16px;
+            font-size:1.8rem;
+            font-weight:700;
+            box-shadow:0 8px 20px rgba(59,130,246,0.3);
+            transition:all 0.3s ease;
+            border:4px solid transparent;
+          ">
+            ← Left Side
+          </div>
+
+          <div onclick="selectTeam('right')" id="rightButton" style="
+            flex:1;
+            cursor:pointer;
+            padding:3rem 2rem;
+            background:linear-gradient(135deg, #ef4444, #b91c1c);
+            color:white;
+            text-align:center;
+            border-radius:16px;
+            font-size:1.8rem;
+            font-weight:700;
+            box-shadow:0 8px 20px rgba(239,68,68,0.3);
+            transition:all 0.3s ease;
+            border:4px solid transparent;
+          ">
+            Right Side →
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Answer Question (Hidden Initially) -->
+      <div id="questionSection" style="display:none;">
+        <p style="text-align:center; font-style:italic; margin-bottom:1.5rem;">
+          Step 2: Answer for your team - <strong id="selectedTeamName"></strong>
+        </p>
+
+        <input type="hidden" name="team_side" id="teamSideInput" value="" />
+
+        <ul class="choice-list">
+        {% for c in poll.choices %}
+          <li onclick="this.querySelector('input').checked = true;">
+            <label style="cursor:pointer; display:flex; align-items:center;">
+              <input type="radio" name="answer_choice" value="{{ forloop.counter0 }}" required />
+              {{ c }}
+            </label>
+          </li>
+        {% endfor %}
+        </ul>
+      </div>
     {% endif %}
 
     <button type="submit" class="submit-btn" style="margin-top:1.5rem;">
@@ -207,6 +271,26 @@
 
     errorDiv.style.display = 'none';
   });
+</script>
+{% endif %}
+
+{% if poll.question_format == 'team_battle' %}
+<script>
+  function selectTeam(side) {
+    // Set hidden input value
+    document.getElementById('teamSideInput').value = side;
+
+    // Update team name display
+    var teamName = side === 'left' ? '← Left Side' : 'Right Side →';
+    document.getElementById('selectedTeamName').textContent = teamName;
+    document.getElementById('selectedTeamName').style.color = side === 'left' ? '#3b82f6' : '#ef4444';
+
+    // Hide team selection
+    document.getElementById('teamSelection').style.display = 'none';
+
+    // Show question section
+    document.getElementById('questionSection').style.display = 'block';
+  }
 </script>
 {% endif %}
 

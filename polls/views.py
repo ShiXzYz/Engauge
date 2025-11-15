@@ -69,7 +69,15 @@ def review_generated(request, doc_id):
             q.save()
             # create poll
             question_format = request.POST.get('question_format', 'single_choice')
-            Poll.objects.create(question_text=q.text, choices=q.choices, question_format=question_format)
+            correct_answer = request.POST.get('correct_answer', None)
+            if correct_answer:
+                correct_answer = int(correct_answer)
+            Poll.objects.create(
+                question_text=q.text,
+                choices=q.choices,
+                question_format=question_format,
+                correct_answer=correct_answer
+            )
             return redirect('polls:manage_polls')
         else:
             q.status = 'rejected'
@@ -112,6 +120,12 @@ def poll_vote(request, poll_id):
             # Sort by rank (1st, 2nd, 3rd, 4th) and extract choice indices
             rankings.sort(key=lambda x: x[0])
             choice = [choice_idx for _, choice_idx in rankings]
+        elif poll.question_format == 'team_battle':
+            # Team battle: store team side and answer choice
+            team_side = request.POST.get('team_side')
+            answer_choice = int(request.POST.get('answer_choice'))
+            # Store as dict: {"team": "left"/"right", "answer": choice_index}
+            choice = {"team": team_side, "answer": answer_choice}
         else:
             choice = None
 
@@ -177,6 +191,62 @@ def poll_results(request, poll_id):
             'num_choices': num_choices
         })
 
+    elif poll.question_format == 'team_battle':
+        # Team battle: calculate correct answers for each side
+        left_correct = 0
+        left_total = 0
+        right_correct = 0
+        right_total = 0
+
+        for response in poll.responses.all():
+            response_data = response.choice
+
+            # Handle both old format (string) and new format (dict)
+            if isinstance(response_data, dict):
+                # New format: {"team": "left"/"right", "answer": choice_index}
+                team = response_data.get('team')
+                answer = response_data.get('answer')
+
+                if team == 'left':
+                    left_total += 1
+                    if answer == poll.correct_answer:
+                        left_correct += 1
+                elif team == 'right':
+                    right_total += 1
+                    if answer == poll.correct_answer:
+                        right_correct += 1
+            elif isinstance(response_data, str):
+                # Old format: just "left" or "right" - count as participation only
+                if response_data == 'left':
+                    left_total += 1
+                elif response_data == 'right':
+                    right_total += 1
+
+        # Calculate percentages
+        left_percentage = (left_correct / left_total * 100) if left_total > 0 else 0
+        right_percentage = (right_correct / right_total * 100) if right_total > 0 else 0
+
+        # Determine winner based on percentage of correct answers
+        if left_percentage > right_percentage:
+            winner = 'left'
+        elif right_percentage > left_percentage:
+            winner = 'right'
+        else:
+            winner = 'tie'
+
+        return render(request, 'polls/results.html', {
+            'poll': poll,
+            'left_count': left_total,
+            'right_count': right_total,
+            'left_correct': left_correct,
+            'right_correct': right_correct,
+            'left_percentage': round(left_percentage, 1),
+            'right_percentage': round(right_percentage, 1),
+            'total': total,
+            'winner': winner,
+            'format': 'team_battle'
+        })
+
     return render(request, 'polls/results.html', {'poll': poll, 'total': 0})
 
 
@@ -191,3 +261,11 @@ def delete_poll(request, poll_id):
         poll.delete()
         messages.success(request, f'Poll "{poll.question_text[:50]}" has been deleted.')
     return redirect('polls:manage_polls')
+
+
+def delete_document(request, doc_id):
+    doc = get_object_or_404(Document, id=doc_id)
+    if request.method == 'POST':
+        doc.delete()
+        messages.success(request, f'Document "{doc.title}" has been deleted.')
+    return redirect('polls:index')

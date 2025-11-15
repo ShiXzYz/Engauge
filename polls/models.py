@@ -30,11 +30,13 @@ class Poll(models.Model):
     FORMAT_CHOICES = [
         ('single_choice', 'Single Choice'),
         ('speed_ranking', 'Speed Ranking'),
+        ('team_battle', 'Team Battle'),
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     question_text = models.TextField()
     choices = models.JSONField(default=list)
     question_format = models.CharField(max_length=20, choices=FORMAT_CHOICES, default='single_choice')
+    correct_answer = models.IntegerField(null=True, blank=True)  # For team_battle: index of correct choice
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
 

@@ -7,6 +7,7 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('upload/', views.upload_document, name='upload_document'),
     path('review/<uuid:doc_id>/', views.review_generated, name='review_generated'),
+    path('document/<uuid:doc_id>/delete/', views.delete_document, name='delete_document'),
     path('manage/', views.manage_polls, name='manage_polls'),
     path('poll/<uuid:poll_id>/', views.poll_display, name='poll_display'),
     path('poll/<uuid:poll_id>/vote/', views.poll_vote, name='poll_vote'),

@@ -19,14 +19,28 @@
       margin-bottom:0.8rem;
       border-radius:10px;
       box-shadow:0 4px 12px rgba(0,0,0,0.05);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
     ">
-      <a href="{% url 'polls:review_generated' doc_id=d.id %}"
-         style="font-size:1.1rem; color:#4f46e5; font-weight:600; text-decoration:none;">
-         {{ d.title }}
-      </a>
-      <div style="color:#6b7280; margin-top:0.25rem;">
-        Uploaded: {{ d.uploaded_at }}
+      <div style="flex:1;">
+        <a href="{% url 'polls:review_generated' doc_id=d.id %}"
+           style="font-size:1.1rem; color:#4f46e5; font-weight:600; text-decoration:none;">
+           {{ d.title }}
+        </a>
+        <div style="color:#6b7280; margin-top:0.25rem;">
+          Uploaded: {{ d.uploaded_at|date:"M d, Y" }}
+        </div>
       </div>
+      <form method="post" action="{% url 'polls:delete_document' doc_id=d.id %}"
+            style="display:inline;"
+            onsubmit="return confirm('Delete this document and all its questions?');">
+        {% csrf_token %}
+        <button type="submit"
+                style="background:none; border:none; color:#dc2626; cursor:pointer; font-weight:600; padding:0.5rem;">
+          Delete
+        </button>
+      </form>
     </li>
   {% empty %}
     <li style="
