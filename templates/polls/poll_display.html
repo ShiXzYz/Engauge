@@ -1,26 +1,152 @@
 {% extends 'polls/base.html' %}
 {% block title %}Poll{% endblock %}
 {% block content %}
-  <h2>Poll</h2>
+
+<style>
+  .poll-container {
+    max-width: 700px;
+    margin: auto;
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    animation: fadeIn 0.6s ease;
+    font-family: "Inter", sans-serif;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  h2 {
+    text-align: center;
+    font-size: 1.9rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+  }
+
+  .question-text {
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  ul.choice-list {
+    padding: 0;
+    list-style: none;
+  }
+
+  ul.choice-list li {
+    margin: 0.7rem 0;
+    padding: 0.8rem 1rem;
+    background: #f5f7fb;
+    border-radius: 10px;
+    transition: 0.2s;
+    cursor: pointer;
+  }
+  ul.choice-list li:hover {
+    background: #eef2ff;
+    transform: translateX(4px);
+  }
+
+  input[type="radio"] {
+    margin-right: 10px;
+    transform: scale(1.2);
+    cursor: pointer;
+  }
+
+  table {
+    width: 100%;
+    margin-top: 1rem;
+    border-collapse: collapse;
+  }
+  td {
+    padding: 0.7rem 0;
+  }
+
+  select.rank-select {
+    padding: 0.4rem;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  select.rank-select:hover {
+    border-color: #818cf8;
+  }
+
+  .error-banner {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 0.7rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    display: none;
+    animation: slideDown 0.4s ease;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-5px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 0.9rem;
+    border: none;
+    border-radius: 10px;
+    background: #6366f1;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.25s;
+  }
+
+  .submit-btn:hover {
+    background: #4f46e5;
+    transform: translateY(-2px);
+  }
+
+  .submit-btn:active {
+    transform: translateY(0);
+  }
+
+</style>
+
+<div class="poll-container">
+  <h2>📊 Interactive Poll</h2>
+
   <form method="post" action="{% url 'polls:poll_vote' poll_id=poll.id %}" id="pollForm">
     {% csrf_token %}
-    <p>{{ poll.question_text }}</p>
+
+    <p class="question-text">{{ poll.question_text }}</p>
 
     {% if poll.question_format == 'single_choice' %}
-      <ul>
+      <ul class="choice-list">
       {% for c in poll.choices %}
-        <li>
-          <label>
+        <li onclick="this.querySelector('input').checked = true;">
+          <label style="cursor:pointer; display:flex; align-items:center;">
             <input type="radio" name="choice" value="{{ forloop.counter0 }}" required />
             {{ c }}
           </label>
         </li>
       {% endfor %}
       </ul>
+
     {% elif poll.question_format == 'speed_ranking' %}
-      <p><em>Rank the choices from 1 to {{ poll.choices|length }}. Each choice must have a unique rank.</em></p>
-      <div id="errorMessage" style="color:red; font-weight:bold; margin-bottom:1rem; display:none;"></div>
-      <table style="width:100%; max-width:600px">
+      <div id="errorMessage" class="error-banner"></div>
+
+      <p style="text-align:center; font-style:italic;">
+        Rank the choices uniquely from 1 to {{ poll.choices|length }}
+      </p>
+
+      <table>
         <thead>
           <tr>
             <th style="text-align:left">Choice</th>
@@ -30,9 +156,9 @@
         <tbody>
         {% for c in poll.choices %}
           <tr>
-            <td style="padding:.5rem 0">{{ c }}</td>
+            <td>{{ c }}</td>
             <td>
-              <select name="rank_{{ forloop.counter0 }}" class="rank-select" required style="width:80px">
+              <select name="rank_{{ forloop.counter0 }}" class="rank-select" required>
                 <option value="">--</option>
                 {% for i in poll.choices %}
                   <option value="{{ forloop.counter }}">{{ forloop.counter }}</option>
@@ -45,40 +171,43 @@
       </table>
     {% endif %}
 
-    <button type="submit" style="margin-top:1rem">Submit</button>
+    <button type="submit" class="submit-btn" style="margin-top:1.5rem;">
+      Submit Response ➜
+    </button>
   </form>
+</div>
 
-  {% if poll.question_format == 'speed_ranking' %}
-  <script>
-    document.getElementById('pollForm').addEventListener('submit', function(e) {
-      var selects = document.querySelectorAll('.rank-select');
-      var ranks = [];
-      var errorDiv = document.getElementById('errorMessage');
 
-      // Collect all selected ranks
-      for (var i = 0; i < selects.length; i++) {
-        var value = selects[i].value;
-        if (!value) {
-          errorDiv.textContent = 'Please select a rank for all choices.';
-          errorDiv.style.display = 'block';
-          e.preventDefault();
-          return;
-        }
-        ranks.push(value);
-      }
+{% if poll.question_format == 'speed_ranking' %}
+<script>
+  document.getElementById('pollForm').addEventListener('submit', function(e) {
+    var selects = document.querySelectorAll('.rank-select');
+    var ranks = [];
+    var errorDiv = document.getElementById('errorMessage');
 
-      // Check for duplicates
-      var uniqueRanks = new Set(ranks);
-      if (uniqueRanks.size !== ranks.length) {
-        errorDiv.textContent = 'Error: Each choice must have a unique rank. You cannot use the same rank twice.';
+    for (var i = 0; i < selects.length; i++) {
+      var value = selects[i].value;
+      if (!value) {
+        errorDiv.textContent = '⚠️ Please select a rank for every choice.';
         errorDiv.style.display = 'block';
         e.preventDefault();
         return;
       }
+      ranks.push(value);
+    }
 
-      // Hide error if validation passes
-      errorDiv.style.display = 'none';
-    });
-  </script>
-  {% endif %}
+    // Check for duplicates
+    var uniqueRanks = new Set(ranks);
+    if (uniqueRanks.size !== ranks.length) {
+      errorDiv.textContent = '❌ Each choice must have a unique rank.';
+      errorDiv.style.display = 'block';
+      e.preventDefault();
+      return;
+    }
+
+    errorDiv.style.display = 'none';
+  });
+</script>
+{% endif %}
+
 {% endblock %}

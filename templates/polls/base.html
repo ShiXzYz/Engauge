@@ -3,32 +3,130 @@
   <head>
     <meta charset="utf-8" />
     <title>Engauge - {% block title %}{% endblock %}</title>
+
+    <!-- Modern Clean Styling -->
     <style>
-      body { font-family: Arial, sans-serif; max-width: 900px; margin: 2rem auto; }
-      header { margin-bottom: 1rem }
-      .question { border: 1px solid #ddd; padding: 1rem; margin-bottom: .5rem }
+      :root {
+        --primary: #6366f1;
+        --primary-hover: #4f46e5;
+        --bg: #f8f9fc;
+        --text: #1f2937;
+        --nav-bg: white;
+      }
+
+      body {
+        font-family: "Inter", Arial, sans-serif;
+        background: var(--bg);
+        margin: 0;
+        padding: 0;
+        color: var(--text);
+      }
+
+      /* Centered container */
+      .container {
+        max-width: 950px;
+        margin: 2.5rem auto;
+        padding: 0 1rem;
+      }
+
+      /* Header */
+      header {
+        background: var(--nav-bg);
+        padding: 1.2rem 0;
+        border-bottom: 1px solid #e5e7eb;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      }
+
+      header h1 a {
+        text-decoration: none;
+        color: var(--primary);
+        font-size: 1.9rem;
+        font-weight: 700;
+      }
+
+      nav {
+        margin-top: 0.5rem;
+      }
+
+      nav a {
+        margin-right: 1rem;
+        text-decoration: none;
+        font-weight: 500;
+        color: #4b5563;
+        transition: 0.2s;
+      }
+
+      nav a:hover {
+        color: var(--primary-hover);
+      }
+
+      /* Messages */
+      .messages {
+        margin: 1rem 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .messages li {
+        background: #eef2ff;
+        border-left: 5px solid var(--primary);
+        padding: 0.7rem 1rem;
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        animation: fadeIn 0.4s ease;
+      }
+
+      /* Content block */
+      .content {
+        margin-top: 1.5rem;
+        background: white;
+        padding: 2rem;
+        border-radius: 14px;
+        box-shadow: 0 5px 18px rgba(0,0,0,0.06);
+        animation: fadeInUp 0.4s ease;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+      }
+
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
     </style>
   </head>
+
   <body>
     <header>
-      <h1><a href="/">Engauge</a></h1>
-      {% if not hide_nav %}
-      <nav>
-        <a href="/upload/">Upload document</a> |
-        <a href="/manage/">Manage polls</a>
-      </nav>
-      {% endif %}
-      <hr />
+      <div class="container">
+        <h1><a href="/">Engauge</a></h1>
+
+        {% if not hide_nav %}
+        <nav>
+          <a href="/upload/">📄 Upload Document</a>
+          <a href="/manage/">🛠 Manage Polls</a>
+        </nav>
+        {% endif %}
+      </div>
     </header>
-    {% if messages %}
-      <ul style="list-style:none; padding:0;">
+
+    <div class="container">
+      
+      {% if messages %}
+      <ul class="messages">
         {% for message in messages %}
-          <li style="margin:.25rem 0; padding:.5rem; background:#f5f5f5; border-left:4px solid #999;">
-            {{ message }}
-          </li>
+          <li>{{ message }}</li>
         {% endfor %}
       </ul>
-    {% endif %}
-    {% block content %}{% endblock %}
+      {% endif %}
+
+      <div class="content">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+
   </body>
 </html>
