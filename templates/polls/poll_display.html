@@ -1,20 +1,452 @@
 {% extends 'polls/base.html' %}
 {% block title %}Poll{% endblock %}
 {% block content %}
-  <h2>Poll</h2>
-  <form method="post" action="{% url 'polls:poll_vote' poll_id=poll.id %}">
+
+<style>
+  .poll-container {
+    max-width: 700px;
+    margin: auto;
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    animation: fadeIn 0.6s ease;
+    font-family: "Inter", sans-serif;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  h2 {
+    text-align: center;
+    font-size: 1.9rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+  }
+
+  .question-text {
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  ul.choice-list {
+    padding: 0;
+    list-style: none;
+  }
+
+  ul.choice-list li {
+    margin: 0.7rem 0;
+    padding: 0.8rem 1rem;
+    background: #f5f7fb;
+    border-radius: 10px;
+    transition: 0.2s;
+    cursor: pointer;
+  }
+  ul.choice-list li:hover {
+    background: #eef2ff;
+    transform: translateX(4px);
+  }
+
+  input[type="radio"] {
+    margin-right: 10px;
+    transform: scale(1.2);
+    cursor: pointer;
+  }
+
+  table {
+    width: 100%;
+    margin-top: 1rem;
+    border-collapse: collapse;
+  }
+  td {
+    padding: 0.7rem 0;
+  }
+
+  select.rank-select {
+    padding: 0.4rem;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  select.rank-select:hover {
+    border-color: #818cf8;
+  }
+
+  .error-banner {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 0.7rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    display: none;
+    animation: slideDown 0.4s ease;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-5px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 0.9rem;
+    border: none;
+    border-radius: 10px;
+    background: #6366f1;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.25s;
+  }
+
+  .submit-btn:hover {
+    background: #4f46e5;
+    transform: translateY(-2px);
+  }
+
+  .submit-btn:active {
+    transform: translateY(0);
+  }
+
+</style>
+
+<div class="poll-container">
+  <h2>📊 Interactive Poll</h2>
+
+  {% if not poll.active %}
+    <div style="
+      text-align:center;
+      padding:3rem 2rem;
+      background:linear-gradient(135deg, #fef3c7, #fde68a);
+      border-radius:12px;
+      border:2px solid #f59e0b;
+    ">
+      <div style="font-size:4rem; margin-bottom:1rem;">⚠️</div>
+      <h3 style="font-size:1.5rem; color:#92400e; margin-bottom:0.5rem;">
+        Poll Deactivated
+      </h3>
+      <p style="color:#78350f; font-size:1.1rem;">
+        This poll has been deactivated by your instructor.
+      </p>
+    </div>
+  {% else %}
+  <form method="post" action="{% url 'polls:poll_vote' poll_id=poll.id %}" id="pollForm">
     {% csrf_token %}
-    <p>{{ poll.question_text }}</p>
-    <ul>
-    {% for c in poll.choices %}
-      <li>
-        <label>
-          <input type="radio" name="choice" value="{{ forloop.counter0 }}" required />
-          {{ c }}
-        </label>
-      </li>
-    {% endfor %}
-    </ul>
-    <button type="submit">Submit</button>
+
+    <p class="question-text">{{ poll.question_text }}</p>
+
+    {% if poll.question_format == 'single_choice' %}
+      <ul class="choice-list">
+      {% for c in poll.choices %}
+        <li onclick="this.querySelector('input').checked = true;">
+          <label style="cursor:pointer; display:flex; align-items:center;">
+            <input type="radio" name="choice" value="{{ forloop.counter0 }}" required />
+            {{ c }}
+          </label>
+        </li>
+      {% endfor %}
+      </ul>
+
+    {% elif poll.question_format == 'speed_ranking' %}
+      <div id="errorMessage" class="error-banner"></div>
+
+      <p style="text-align:center; font-style:italic;">
+        Rank the choices uniquely from 1 to {{ poll.choices|length }}
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left">Choice</th>
+            <th style="text-align:left">Rank</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for c in poll.choices %}
+          <tr>
+            <td>{{ c }}</td>
+            <td>
+              <select name="rank_{{ forloop.counter0 }}" class="rank-select" required>
+                <option value="">--</option>
+                {% for i in poll.choices %}
+                  <option value="{{ forloop.counter }}">{{ forloop.counter }}</option>
+                {% endfor %}
+              </select>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+
+    {% elif poll.question_format == 'team_battle' %}
+      <!-- Step 1: Choose Team Side -->
+      <div id="teamSelection">
+        <p style="text-align:center; font-style:italic; margin-bottom:2rem;">
+          Step 1: Choose your team based on where you're sitting!
+        </p>
+
+        <div style="display:flex; gap:1.5rem; justify-content:center; align-items:stretch;">
+          <div onclick="selectTeam('left')" id="leftButton" style="
+            flex:1;
+            cursor:pointer;
+            padding:3rem 2rem;
+            background:linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color:white;
+            text-align:center;
+            border-radius:16px;
+            font-size:1.8rem;
+            font-weight:700;
+            box-shadow:0 8px 20px rgba(59,130,246,0.3);
+            transition:all 0.3s ease;
+            border:4px solid transparent;
+          ">
+            ← Left Side
+          </div>
+
+          <div onclick="selectTeam('right')" id="rightButton" style="
+            flex:1;
+            cursor:pointer;
+            padding:3rem 2rem;
+            background:linear-gradient(135deg, #ef4444, #b91c1c);
+            color:white;
+            text-align:center;
+            border-radius:16px;
+            font-size:1.8rem;
+            font-weight:700;
+            box-shadow:0 8px 20px rgba(239,68,68,0.3);
+            transition:all 0.3s ease;
+            border:4px solid transparent;
+          ">
+            Right Side →
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Answer Question (Hidden Initially) -->
+      <div id="questionSection" style="display:none;">
+        <p style="text-align:center; font-style:italic; margin-bottom:1.5rem;">
+          Step 2: Answer for your team - <strong id="selectedTeamName"></strong>
+        </p>
+
+        <input type="hidden" name="team_side" id="teamSideInput" value="" />
+
+        <ul class="choice-list">
+        {% for c in poll.choices %}
+          <li onclick="this.querySelector('input').checked = true;">
+            <label style="cursor:pointer; display:flex; align-items:center;">
+              <input type="radio" name="answer_choice" value="{{ forloop.counter0 }}" required />
+              {{ c }}
+            </label>
+          </li>
+        {% endfor %}
+        </ul>
+      </div>
+
+    {% elif poll.question_format == 'meta_prediction' %}
+      <!-- Step 1: Predict how peers will answer -->
+      <div id="predictionStep">
+        <p style="text-align:center; font-style:italic; margin-bottom:1.5rem;">
+          Step 1: Predict what % of your classmates will choose each answer
+        </p>
+
+        <div id="predictionError" style="
+          display:none;
+          background:#fee2e2;
+          color:#b91c1c;
+          padding:0.7rem 1rem;
+          border-radius:8px;
+          margin-bottom:1rem;
+          font-weight:600;
+        "></div>
+
+        <table style="width:100%; margin-bottom:1.5rem;">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:0.5rem;">Choice</th>
+              <th style="text-align:center; padding:0.5rem;">Predicted %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in poll.choices %}
+            <tr>
+              <td style="padding:0.7rem;">{{ c }}</td>
+              <td style="text-align:center; padding:0.7rem;">
+                <input type="number"
+                       name="prediction_{{ forloop.counter0 }}"
+                       id="prediction_{{ forloop.counter0 }}"
+                       class="prediction-input"
+                       min="0" max="100"
+                       value="0"
+                       required
+                       style="width:80px; padding:0.4rem; border-radius:6px; border:1px solid #cbd5e1; text-align:center;"
+                       onchange="updatePredictionTotal()">
+                <span style="margin-left:0.3rem;">%</span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div style="text-align:center; margin-bottom:1.5rem;">
+          <strong>Total: <span id="predictionTotal" style="font-size:1.2rem; color:#6366f1;">0</span>%</strong>
+          <span id="totalWarning" style="display:none; color:#ef4444; margin-left:1rem; font-weight:600;">
+            Must equal 100%
+          </span>
+        </div>
+
+        <div style="text-align:center;">
+          <button type="button" onclick="proceedToAnswer()" style="
+            padding:1rem 2rem;
+            background:linear-gradient(135deg, #6366f1, #4f46e5);
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:1.1rem;
+            font-weight:600;
+            cursor:pointer;
+            box-shadow:0 4px 12px rgba(99,102,241,0.3);
+          ">
+            Next: Your Answer →
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Answer the question yourself -->
+      <div id="answerStep" style="display:none;">
+        <p style="text-align:center; font-style:italic; margin-bottom:1.5rem;">
+          Step 2: Now answer the question yourself
+        </p>
+
+        <ul class="choice-list">
+        {% for c in poll.choices %}
+          <li onclick="this.querySelector('input').checked = true;">
+            <label style="cursor:pointer; display:flex; align-items:center;">
+              <input type="radio" name="actual_answer" value="{{ forloop.counter0 }}" required />
+              {{ c }}
+            </label>
+          </li>
+        {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <button type="submit" class="submit-btn" style="margin-top:1.5rem;">
+      Submit Response ➜
+    </button>
   </form>
+  {% endif %}
+</div>
+
+
+{% if poll.question_format == 'speed_ranking' %}
+<script>
+  document.getElementById('pollForm').addEventListener('submit', function(e) {
+    var selects = document.querySelectorAll('.rank-select');
+    var ranks = [];
+    var errorDiv = document.getElementById('errorMessage');
+
+    for (var i = 0; i < selects.length; i++) {
+      var value = selects[i].value;
+      if (!value) {
+        errorDiv.textContent = '⚠️ Please select a rank for every choice.';
+        errorDiv.style.display = 'block';
+        e.preventDefault();
+        return;
+      }
+      ranks.push(value);
+    }
+
+    // Check for duplicates
+    var uniqueRanks = new Set(ranks);
+    if (uniqueRanks.size !== ranks.length) {
+      errorDiv.textContent = '❌ Each choice must have a unique rank.';
+      errorDiv.style.display = 'block';
+      e.preventDefault();
+      return;
+    }
+
+    errorDiv.style.display = 'none';
+  });
+</script>
+{% endif %}
+
+{% if poll.question_format == 'team_battle' %}
+<script>
+  function selectTeam(side) {
+    // Set hidden input value
+    document.getElementById('teamSideInput').value = side;
+
+    // Update team name display
+    var teamName = side === 'left' ? '← Left Side' : 'Right Side →';
+    document.getElementById('selectedTeamName').textContent = teamName;
+    document.getElementById('selectedTeamName').style.color = side === 'left' ? '#3b82f6' : '#ef4444';
+
+    // Hide team selection
+    document.getElementById('teamSelection').style.display = 'none';
+
+    // Show question section
+    document.getElementById('questionSection').style.display = 'block';
+  }
+</script>
+{% endif %}
+
+{% if poll.question_format == 'meta_prediction' %}
+<script>
+  function updatePredictionTotal() {
+    var inputs = document.querySelectorAll('.prediction-input');
+    var total = 0;
+
+    for (var i = 0; i < inputs.length; i++) {
+      var value = parseInt(inputs[i].value) || 0;
+      total += value;
+    }
+
+    var totalSpan = document.getElementById('predictionTotal');
+    var warningSpan = document.getElementById('totalWarning');
+
+    totalSpan.textContent = total;
+
+    if (total === 100) {
+      totalSpan.style.color = '#10b981';
+      warningSpan.style.display = 'none';
+    } else {
+      totalSpan.style.color = '#ef4444';
+      warningSpan.style.display = 'inline';
+    }
+  }
+
+  function proceedToAnswer() {
+    var inputs = document.querySelectorAll('.prediction-input');
+    var total = 0;
+
+    for (var i = 0; i < inputs.length; i++) {
+      var value = parseInt(inputs[i].value) || 0;
+      total += value;
+    }
+
+    if (total !== 100) {
+      var errorDiv = document.getElementById('predictionError');
+      errorDiv.textContent = 'Error: Predictions must total exactly 100%';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    // Hide prediction step
+    document.getElementById('predictionStep').style.display = 'none';
+
+    // Show answer step
+    document.getElementById('answerStep').style.display = 'block';
+  }
+</script>
+{% endif %}
+
 {% endblock %}

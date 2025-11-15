@@ -1,13 +1,59 @@
 {% extends 'polls/base.html' %}
 {% block title %}Home{% endblock %}
+
 {% block content %}
-  <h2>Recent uploads</h2>
-  <p><a href="{% url 'polls:manage_polls' %}">Manage polls</a></p>
-  <ul>
-    {% for d in documents %}
-      <li><a href="{% url 'polls:review_generated' doc_id=d.id %}">{{ d.title }}</a> - {{ d.uploaded_at }}</li>
-    {% empty %}
-      <li>No documents yet. <a href="{% url 'polls:upload_document' %}">Upload one</a>.</li>
-    {% endfor %}
-  </ul>
+<h2 style="margin-bottom:1rem; font-size:1.8rem;">📄 Recent Uploads</h2>
+
+<div style="margin-bottom:1.5rem;">
+  <a href="{% url 'polls:manage_polls' %}"
+     style="text-decoration:none; font-weight:600; color:#6366f1;">
+     → Manage polls
+  </a>
+</div>
+
+<ul style="list-style:none; padding:0; margin:0;">
+  {% for d in documents %}
+    <li style="
+      background:white;
+      padding:1rem 1.2rem;
+      margin-bottom:0.8rem;
+      border-radius:10px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.05);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    ">
+      <div style="flex:1;">
+        <a href="{% url 'polls:review_generated' doc_id=d.id %}"
+           style="font-size:1.1rem; color:#4f46e5; font-weight:600; text-decoration:none;">
+           {{ d.title }}
+        </a>
+        <div style="color:#6b7280; margin-top:0.25rem;">
+          Uploaded: {{ d.uploaded_at|date:"M d, Y" }}
+        </div>
+      </div>
+      <form method="post" action="{% url 'polls:delete_document' doc_id=d.id %}"
+            style="display:inline;"
+            onsubmit="return confirm('Delete this document and all its questions?');">
+        {% csrf_token %}
+        <button type="submit"
+                style="background:none; border:none; color:#dc2626; cursor:pointer; font-weight:600; padding:0.5rem;">
+          Delete
+        </button>
+      </form>
+    </li>
+  {% empty %}
+    <li style="
+      background:white;
+      padding:1.2rem;
+      border-radius:10px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.05);
+    ">
+      No documents yet.
+      <a href="{% url 'polls:upload_document' %}" style="color:#6366f1; font-weight:600;">
+        Upload one
+      </a>.
+    </li>
+  {% endfor %}
+</ul>
 {% endblock %}

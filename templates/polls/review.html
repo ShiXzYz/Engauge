@@ -1,36 +1,108 @@
 {% extends 'polls/base.html' %}
-{% block title %}Review generated questions{% endblock %}
+{% block title %}Review Questions{% endblock %}
+
 {% block content %}
-  <h2>Review generated questions for "{{ document.title }}"</h2>
-  <p><a href="{% url 'polls:manage_polls' %}">Manage polls</a></p>
-  {% if questions %}
-    <ul>
-    {% for q in questions %}
-      <li class="question">
-        <form method="post">
-          {% csrf_token %}
-          <input type="hidden" name="question_id" value="{{ q.id }}" />
-          <label>Question text</label>
-          <textarea name="text" rows="3" style="width:100%">{{ q.text }}</textarea>
-          <div>
-            <label>Choices (4):</label>
+<h2 style="font-size:1.8rem;">📘 Review Questions for "{{ document.title }}"</h2>
+
+<div style="margin-bottom:1.5rem;">
+  <a href="{% url 'polls:manage_polls' %}" style="color:#6366f1; font-weight:600;">
+    ← Manage polls
+  </a>
+</div>
+
+{% if questions %}
+<ul style="list-style:none; padding:0;">
+  {% for q in questions %}
+  <li style="
+    background:white;
+    padding:1.2rem;
+    margin-bottom:1rem;
+    border-radius:12px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.06);
+  ">
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="question_id" value="{{ q.id }}" />
+
+      <label style="font-weight:600;">Question text</label>
+      <textarea name="text" rows="3"
+        style="width:100%; margin-top:.3rem; border-radius:8px; padding:0.7rem;">{{ q.text }}</textarea>
+
+      {% if q.kind == 'mcq' %}
+        <div style="margin-top:1rem;">
+          <label style="font-weight:600;">Choices (4):</label>
+
+          {% for c in q.choices %}
+            <input type="text" name="choice_{{ forloop.counter0 }}" value="{{ c }}"
+              style="width:100%; margin-top:0.4rem; padding:0.6rem; border-radius:8px;">
+          {% endfor %}
+        </div>
+
+        <div style="margin-top:1rem;">
+          <label style="font-weight:600;">Question Format:</label>
+          <select name="question_format" id="format_{{ q.id }}"
+                  onchange="toggleCorrectAnswer('{{ q.id }}')"
+                  style="margin-left:0.5rem; padding:0.5rem; border-radius:8px;">
+            <option value="single_choice">Single Choice</option>
+            <option value="speed_ranking">Speed Ranking</option>
+            <option value="team_battle">Team Battle</option>
+            <option value="meta_prediction">Meta Prediction</option>
+          </select>
+        </div>
+
+        <div id="correct_answer_{{ q.id }}" style="margin-top:1rem; display:block;">
+          <label style="font-weight:600;">Correct Answer:</label>
+          <select name="correct_answer"
+                  style="margin-left:0.5rem; padding:0.5rem; border-radius:8px;">
             {% for c in q.choices %}
-              <div><input type="text" name="choice_{{ forloop.counter0 }}" value="{{ c }}" style="width:100%" /></div>
+              <option value="{{ forloop.counter0 }}">{{ forloop.counter }}. {{ c }}</option>
             {% endfor %}
-            {% for i in q.choices|length|add:'0'|make_list %}{% endfor %}
-            {% if q.choices|length < 4 %}
-              {% for i in "0123"|slice:q.choices|length %}{% endfor %}
-            {% endif %}
-          </div>
-          <div style="margin-top:.5rem">
-            <button name="action" value="accept">Accept & create poll</button>
-            <button name="action" value="reject">Reject</button>
-          </div>
-        </form>
-      </li>
-    {% endfor %}
-    </ul>
-  {% else %}
-    <p>No pending questions. Upload a new document to generate questions.</p>
-  {% endif %}
+          </select>
+        </div>
+      {% else %}
+        <p style="margin-top:1rem; color:#6b7280; font-style:italic;">
+          Exit ticket (short response). No choices required.
+        </p>
+      {% endif %}
+
+      <div style="margin-top:1rem;">
+        {% if q.kind == 'mcq' %}
+          <button name="action" value="accept"
+            style="padding:0.6rem 1rem; border-radius:8px; background:#4f46e5; color:white; border:none;">
+            Accept & Create Poll
+          </button>
+        {% else %}
+          <button name="action" value="accept"
+            style="padding:0.6rem 1rem; border-radius:8px; background:#4f46e5; color:white; border:none;">
+            Accept & Create Exit Ticket
+          </button>
+        {% endif %}
+
+        <button name="action" value="reject"
+          style="padding:0.6rem 1rem; margin-left:0.5rem; border-radius:8px; background:#e5e7eb; border:none;">
+          Reject
+        </button>
+      </div>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+
+{% else %}
+<p style="color:#6b7280;">No pending questions. Upload a new document.</p>
+{% endif %}
+
+<script>
+function toggleCorrectAnswer(questionId) {
+  var formatSelect = document.getElementById('format_' + questionId);
+  var correctAnswerDiv = document.getElementById('correct_answer_' + questionId);
+
+  // Hide correct answer for speed ranking and meta prediction
+  if (formatSelect.value === 'speed_ranking' || formatSelect.value === 'meta_prediction') {
+    correctAnswerDiv.style.display = 'none';
+  } else {
+    correctAnswerDiv.style.display = 'block';
+  }
+}
+</script>
 {% endblock %}
