@@ -1,13 +1,406 @@
 {% extends 'polls/base.html' %}
 {% block title %}Results{% endblock %}
+
 {% block content %}
-  <h2>Results</h2>
-  <p>{{ poll.question_text }}</p>
-  <ul>
+<h2 style="font-size:1.8rem;">📊 Results</h2>
+<p style="font-size:1.1rem; margin-bottom:1rem;"><strong>{{ poll.question_text }}</strong></p>
+
+{% if format == 'single_choice' %}
+  <h3 style="margin-bottom:1rem;">Vote Counts</h3>
+
+  <ul style="list-style:none; padding:0;">
     {% for c, n in paired %}
-      <li>{{ c }} — {{ n }} vote{{ n|pluralize }}</li>
+      <li style="
+        background:{% if poll.correct_answer == forloop.counter0 %}#d1fae5{% else %}white{% endif %};
+        margin-bottom:0.6rem;
+        padding:0.8rem 1rem;
+        border-radius:10px;
+        box-shadow:0 3px 8px rgba(0,0,0,0.06);
+        border-left:{% if poll.correct_answer == forloop.counter0 %}5px solid #10b981{% else %}5px solid transparent{% endif %};
+        position:relative;
+      ">
+        <strong>{{ c }}</strong> — {{ n }} vote{{ n|pluralize }}
+        {% if poll.correct_answer == forloop.counter0 %}
+          <span style="
+            color:#059669;
+            font-weight:700;
+            margin-left:0.5rem;
+            font-size:0.9rem;
+          ">✓ Correct Answer</span>
+        {% endif %}
+      </li>
     {% endfor %}
   </ul>
-  <p>Total responses: {{ total }}</p>
-  <p><a href="{% url 'polls:manage_polls' %}">Back to Manage polls</a></p>
+
+  <p style="margin-top:1rem; font-weight:600;">Total responses: {{ total }}</p>
+
+{% elif format == 'speed_ranking' %}
+  <h3 style="margin-bottom:1rem;">Ranking Results</h3>
+
+  {% if not poll.countdown_started %}
+    <div style="
+      background:linear-gradient(135deg, #fef3c7, #fde68a);
+      padding:2rem;
+      border-radius:12px;
+      margin-bottom:2rem;
+      text-align:center;
+      border:2px solid #f59e0b;
+    ">
+      <p style="font-size:1.2rem; font-weight:600; color:#78350f; margin-bottom:1rem;">
+        ⏱️ Speed Ranking Mode
+      </p>
+      <p style="color:#92400e; margin-bottom:1.5rem;">
+        Click the button below to start a synchronized countdown for all students. They will see a 3-2-1-GO countdown before the questions appear.
+      </p>
+      <form method="post" action="{% url 'polls:start_countdown' poll_id=poll.id %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" style="
+          padding:1rem 2rem;
+          background:linear-gradient(135deg, #10b981, #059669);
+          color:white;
+          border:none;
+          border-radius:10px;
+          font-size:1.2rem;
+          font-weight:700;
+          cursor:pointer;
+          box-shadow:0 4px 12px rgba(16,185,129,0.3);
+        ">
+          🚀 Start Countdown
+        </button>
+      </form>
+    </div>
+  {% else %}
+    <div style="
+      background:#d1fae5;
+      padding:1rem;
+      border-radius:8px;
+      margin-bottom:1.5rem;
+      text-align:center;
+      border:2px solid #10b981;
+    ">
+      <p style="color:#065f46; font-weight:600;">
+        ✓ Countdown started! Students can now see the questions.
+      </p>
+    </div>
+  {% endif %}
+
+  <p><strong>Total responses:</strong> {{ total }}</p>
+
+  <table style="
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0 0.5rem;
+    margin-top:1rem;
+  ">
+    <thead>
+      <tr style="text-align:left; color:#4b5563;">
+        <th>Choice</th>
+        {% for i in num_choices|make_list %}
+          <th style="text-align:center;">Rank {{ forloop.counter }}</th>
+        {% endfor %}
+        <th style="text-align:center;">Avg Rank</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for item in results_data %}
+      <tr style="
+        background:white;
+        box-shadow:0 3px 10px rgba(0,0,0,0.06);
+      ">
+        <td style="padding:0.8rem;">{{ item.choice }}</td>
+
+        {% for count in item.rank_counts %}
+          <td style="padding:0.8rem; text-align:center;">{{ count }}</td>
+        {% endfor %}
+
+        <td style="padding:0.8rem; text-align:center; font-weight:bold;">
+          {{ item.avg_rank }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p style="margin-top:1rem; color:#6b7280;">
+    <em>Lower average rank is better.</em>
+  </p>
+
+{% elif format == 'team_battle' %}
+  <h3 style="margin-bottom:1rem;">⚔️ Team Battle Results</h3>
+  <p><strong>Total responses:</strong> {{ total }}</p>
+
+  <!-- Bar Graph Container -->
+  <div style="margin-top:2rem; max-width:700px; margin-left:auto; margin-right:auto;">
+
+    <!-- Left Side Bar -->
+    <div style="margin-bottom:2.5rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+        <h4 style="margin:0; font-size:1.3rem; font-weight:600;">← Left Side</h4>
+        <span style="font-size:1.1rem; font-weight:600; color:#3b82f6;">
+          {{ left_count }} student{{ left_count|pluralize }}
+        </span>
+      </div>
+      <div style="
+        width:100%;
+        height:60px;
+        background:#e5e7eb;
+        border-radius:12px;
+        overflow:hidden;
+        position:relative;
+      ">
+        <div style="
+          width:{% if total > 0 %}{% widthratio left_count total 100 %}{% else %}0{% endif %}%;
+          height:100%;
+          background:linear-gradient(90deg, #3b82f6, #1d4ed8);
+          transition:all 0.8s ease;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          color:white;
+          font-weight:700;
+          font-size:1.2rem;
+        ">
+          {% if left_count > 0 %}{% widthratio left_count total 100 %}%{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side Bar -->
+    <div style="margin-bottom:2.5rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+        <h4 style="margin:0; font-size:1.3rem; font-weight:600;">Right Side →</h4>
+        <span style="font-size:1.1rem; font-weight:600; color:#ef4444;">
+          {{ right_count }} student{{ right_count|pluralize }}
+        </span>
+      </div>
+      <div style="
+        width:100%;
+        height:60px;
+        background:#e5e7eb;
+        border-radius:12px;
+        overflow:hidden;
+        position:relative;
+      ">
+        <div style="
+          width:{% if total > 0 %}{% widthratio right_count total 100 %}{% else %}0{% endif %}%;
+          height:100%;
+          background:linear-gradient(90deg, #ef4444, #b91c1c);
+          transition:all 0.8s ease;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          color:white;
+          font-weight:700;
+          font-size:1.2rem;
+        ">
+          {% if right_count > 0 %}{% widthratio right_count total 100 %}%{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Reveal Button -->
+    <div style="text-align:center; margin-top:3rem;">
+      <button id="revealButton" onclick="revealWinner()" style="
+        padding:1.2rem 3rem;
+        background:linear-gradient(135deg, #fbbf24, #f59e0b);
+        color:white;
+        border:none;
+        border-radius:12px;
+        font-size:1.4rem;
+        font-weight:700;
+        cursor:pointer;
+        box-shadow:0 8px 24px rgba(251,191,36,0.4);
+        transition:all 0.3s ease;
+      " onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+        🎉 Reveal Winner
+      </button>
+    </div>
+
+    <!-- Winner Display (Hidden Initially) -->
+    <div id="winnerDisplay" style="
+      display:none;
+      margin-top:3rem;
+      padding:2rem;
+      border-radius:16px;
+      text-align:center;
+      animation:fadeInScale 0.6s ease;
+    ">
+      <h2 id="winnerText" style="font-size:2.5rem; margin:0; font-weight:700;"></h2>
+      <p id="winnerEmoji" style="font-size:4rem; margin:1rem 0;"></p>
+      <div id="scoreDetails" style="margin-top:1.5rem; font-size:1.1rem;">
+        <p style="margin:0.5rem 0;"><strong>← Left Side:</strong> {{ left_correct }}/{{ left_count }} correct ({{ left_percentage }}%)</p>
+        <p style="margin:0.5rem 0;"><strong>Right Side →:</strong> {{ right_correct }}/{{ right_count }} correct ({{ right_percentage }}%)</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function revealWinner() {
+      var winnerDisplay = document.getElementById('winnerDisplay');
+      var winnerText = document.getElementById('winnerText');
+      var winnerEmoji = document.getElementById('winnerEmoji');
+      var revealButton = document.getElementById('revealButton');
+
+      // Hide reveal button
+      revealButton.style.display = 'none';
+
+      // Determine winner and set content
+      var winner = '{{ winner }}';
+      if (winner === 'left') {
+        winnerDisplay.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+        winnerDisplay.style.color = 'white';
+        winnerText.textContent = '← Left Side Wins!';
+        winnerEmoji.textContent = '🏆';
+      } else if (winner === 'right') {
+        winnerDisplay.style.background = 'linear-gradient(135deg, #ef4444, #b91c1c)';
+        winnerDisplay.style.color = 'white';
+        winnerText.textContent = 'Right Side Wins! →';
+        winnerEmoji.textContent = '🏆';
+      } else {
+        winnerDisplay.style.background = 'linear-gradient(135deg, #6b7280, #4b5563)';
+        winnerDisplay.style.color = 'white';
+        winnerText.textContent = "It's a Tie!";
+        winnerEmoji.textContent = '🤝';
+      }
+
+      // Show winner display with animation
+      winnerDisplay.style.display = 'block';
+    }
+  </script>
+
+  <style>
+    @keyframes fadeInScale {
+      from {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+  </style>
+
+{% elif format == 'meta_prediction' %}
+  <h3 style="margin-bottom:1rem;">🔮 Meta Prediction Results</h3>
+  <p><strong>Total responses:</strong> {{ total }}</p>
+  <p style="margin-bottom:2rem;">Class predicted vs. actual voting patterns</p>
+
+  <table style="
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0 0.5rem;
+    margin-top:1rem;
+  ">
+    <thead>
+      <tr style="text-align:left; color:#4b5563;">
+        <th style="padding:0.5rem;">Choice</th>
+        <th style="text-align:center; padding:0.5rem;">Predicted %</th>
+        <th style="text-align:center; padding:0.5rem;">Actual %</th>
+        <th style="text-align:center; padding:0.5rem;">Accuracy</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for item in results_data %}
+      <tr style="
+        background:white;
+        box-shadow:0 3px 10px rgba(0,0,0,0.06);
+      ">
+        <td style="padding:0.8rem;">
+          <strong>{{ item.choice }}</strong>
+          <div style="color:#6b7280; font-size:0.9rem;">{{ item.actual_count }} student{{ item.actual_count|pluralize }}</div>
+        </td>
+
+        <td style="text-align:center; padding:0.8rem;">
+          <div style="font-size:1.1rem; font-weight:600; color:#6366f1;">{{ item.predicted_pct }}%</div>
+          <div style="
+            width:100%;
+            height:8px;
+            background:#e5e7eb;
+            border-radius:4px;
+            overflow:hidden;
+            margin-top:0.3rem;
+          ">
+            <div style="
+              width:{{ item.predicted_pct }}%;
+              height:100%;
+              background:#6366f1;
+            "></div>
+          </div>
+        </td>
+
+        <td style="text-align:center; padding:0.8rem;">
+          <div style="font-size:1.1rem; font-weight:600; color:#10b981;">{{ item.actual_pct }}%</div>
+          <div style="
+            width:100%;
+            height:8px;
+            background:#e5e7eb;
+            border-radius:4px;
+            overflow:hidden;
+            margin-top:0.3rem;
+          ">
+            <div style="
+              width:{{ item.actual_pct }}%;
+              height:100%;
+              background:#10b981;
+            "></div>
+          </div>
+        </td>
+
+        <td style="text-align:center; padding:0.8rem;">
+          <div style="
+            display:inline-block;
+            padding:0.4rem 0.8rem;
+            border-radius:6px;
+            font-weight:600;
+            background:{% if item.accuracy >= 80 %}#d1fae5{% elif item.accuracy >= 60 %}#fef3c7{% else %}#fee2e2{% endif %};
+            color:{% if item.accuracy >= 80 %}#059669{% elif item.accuracy >= 60 %}#d97706{% else %}#dc2626{% endif %};
+          ">
+            {{ item.accuracy }}%
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div style="
+    margin-top:2rem;
+    padding:1.5rem;
+    background:linear-gradient(135deg, #eef2ff, #e0e7ff);
+    border-radius:12px;
+    text-align:center;
+  ">
+    <h3 style="margin:0 0 0.5rem 0; color:#4338ca;">Overall Class Accuracy</h3>
+    <p style="font-size:2.5rem; font-weight:700; margin:0; color:#4f46e5;">{{ overall_accuracy }}%</p>
+    <p style="margin:0.5rem 0 0 0; color:#6b7280;">
+      {% if overall_accuracy >= 80 %}
+        🎯 Excellent! The class has strong peer understanding.
+      {% elif overall_accuracy >= 60 %}
+        👍 Good! The class generally understands peer thinking.
+      {% else %}
+        💭 Room to grow! Keep exploring peer perspectives.
+      {% endif %}
+    </p>
+  </div>
+
+  <div style="margin-top:1.5rem; padding:1rem; background:#f9fafb; border-radius:8px;">
+    <h4 style="margin:0 0 0.5rem 0; font-size:1rem;">How to read this:</h4>
+    <ul style="margin:0; padding-left:1.5rem; color:#6b7280; font-size:0.95rem;">
+      <li><strong style="color:#6366f1;">Predicted %</strong> = Average of what students thought their peers would choose</li>
+      <li><strong style="color:#10b981;">Actual %</strong> = What percentage actually chose this answer</li>
+      <li><strong>Accuracy</strong> = How close the predictions were (100% = perfect prediction)</li>
+    </ul>
+  </div>
+
+{% endif %}
+
+<div style="margin-top:1.5rem;">
+  <a href="{% url 'polls:manage_polls' %}"
+     style="text-decoration:none; color:#6366f1; font-weight:600;">
+     ← Back to Manage Polls
+  </a>
+</div>
 {% endblock %}

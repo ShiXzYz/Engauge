@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Document, GeneratedQuestion, Poll, PollResponse
+from .models import Document, GeneratedQuestion, Poll, PollResponse, ExitTicket, ExitTicketResponse
 
 
 @admin.register(Document)
@@ -26,3 +26,13 @@ class PollAdmin(admin.ModelAdmin):
 @admin.register(PollResponse)
 class PollResponseAdmin(admin.ModelAdmin):
     list_display = ('poll', 'choice', 'created_at')
+
+
+@admin.register(ExitTicket)
+class ExitTicketAdmin(admin.ModelAdmin):
+    list_display = ('prompt_text', 'active', 'created_at')
+
+
+@admin.register(ExitTicketResponse)
+class ExitTicketResponseAdmin(admin.ModelAdmin):
+    list_display = ('ticket', 'created_at')
