@@ -62,6 +62,86 @@ def _normalize_items(items: List[Dict]) -> List[Dict]:
     return out
 
 
+def generate_exit_tickets_from_text(text: str, max_tickets: int = 3) -> List[Dict]:
+    """Create short-response exit ticket prompts from text using Groq.
+
+    Returns a list of dicts with keys: text (prompt), choices is empty list.
+    Falls back to a small mock set when the API key is missing or on errors.
+    """
+    global LAST_SOURCE, LAST_ERROR
+    api_key = _get_api_key()
+    model = _get_model()
+    if not api_key or Groq is None:
+        LAST_SOURCE = 'mock'
+        LAST_ERROR = None if api_key else 'Missing GROQ_API_KEY'
+        return [
+            {'text': 'In 2–3 sentences, explain one new concept you learned today and how you might apply it next week.', 'choices': []},
+            {'text': 'Describe a real-world scenario where today’s topic would be useful. What steps would you take?', 'choices': []},
+            {'text': 'What part of today’s lesson still feels unclear, and how would you try to resolve it?', 'choices': []},
+        ][:max_tickets]
+
+    client = Groq(api_key=api_key)
+
+    system_msg = (
+        "You generate concise, open-ended exit ticket prompts that require students to apply the material. "
+        "Only output JSON as requested; no prose."
+    )
+    user_prompt = (
+        "From the material below, write up to {n} exit ticket prompts that require short written responses.\n"
+        "Each item must be a JSON object with key: text (string prompt). Do not include choices.\n"
+        "Return a single JSON array only. No explanations.\n\n"
+        "MATERIAL:\n{material}"
+    ).format(n=max_tickets, material=(text or '')[:12000])
+
+    fallbacks = []
+    fb_env = os.getenv('GROQ_FALLBACK_MODEL')
+    if fb_env and fb_env != model:
+        fallbacks.append(fb_env)
+    for cand in ('llama-3.2-11b-text-preview', 'mixtral-8x7b-32768'):
+        if cand != model and cand not in fallbacks:
+            fallbacks.append(cand)
+
+    errors: list[str] = []
+    for m in [model] + fallbacks:
+        try:
+            resp = client.chat.completions.create(
+                model=m,
+                temperature=0.2,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_prompt},
+                ],
+                max_tokens=800,
+            )
+            content = resp.choices[0].message.content if resp.choices else ''
+            try:
+                data = json.loads(content)
+            except Exception:
+                arr = _extract_json_array(content)
+                data = json.loads(arr) if arr else []
+            # normalize: map to text + empty choices
+            out: List[Dict] = []
+            for it in data if isinstance(data, list) else []:
+                t = it.get('text') or it.get('prompt') or it.get('question')
+                if t:
+                    out.append({'text': str(t).strip(), 'choices': []})
+            if out:
+                LAST_SOURCE = 'groq'
+                LAST_ERROR = None
+                return out[:max_tickets]
+            errors.append(f"{m}: Empty or unparseable model output")
+        except Exception as e:
+            errors.append(f"{m}: {str(e)[:200]}")
+
+    LAST_SOURCE = 'mock'
+    LAST_ERROR = '; '.join(errors)[:300] if errors else 'Unknown error'
+    return [
+        {'text': 'In 2–3 sentences, explain one new concept you learned today and how you might apply it next week.', 'choices': []},
+        {'text': 'Describe a real-world scenario where today’s topic would be useful. What steps would you take?', 'choices': []},
+        {'text': 'What part of today’s lesson still feels unclear, and how would you try to resolve it?', 'choices': []},
+    ][:max_tickets]
+
+
 def generate_questions_from_text(text: str, max_questions: int = 6) -> List[Dict]:
     """Create multiple-choice questions from text using Groq chat completions.
 

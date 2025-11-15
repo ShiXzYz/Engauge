@@ -75,6 +75,33 @@
       </td>
     </tr>
     {% endfor %}
-  </tbody>
-</table>
+    </tbody>
+  </table>
+
+  <h2 style="margin-top:2rem">Exit Tickets</h2>
+  <p>Share the "Student link" with your class to let them submit a short response; open "Results" to view submissions.</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Prompt</th>
+        <th>Created</th>
+        <th>Active</th>
+        <th>Student link</th>
+        <th>Results</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for t in tickets %}
+      <tr>
+        <td>{{ t.prompt_text|truncatechars:100 }}</td>
+        <td>{{ t.created_at }}</td>
+        <td>{{ t.active }}</td>
+        <td><a href="{% url 'polls:exit_ticket_display' ticket_id=t.id %}" target="_blank">Open</a></td>
+        <td><a href="{% url 'polls:exit_ticket_results' ticket_id=t.id %}">Results</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">No exit tickets yet. Accept exit ticket prompts from a document.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
 {% endblock %}
