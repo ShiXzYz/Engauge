@@ -1,9 +1,14 @@
+import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .forms import UploadForm
 from .models import Document, GeneratedQuestion, Poll, PollResponse
 from .utils import extract_text_from_file
-from .llm_client import generate_questions_from_text, LAST_SOURCE as LLM_LAST_SOURCE
+from .llm_client import (
+    generate_questions_from_text,
+    LAST_SOURCE as LLM_LAST_SOURCE,
+    LAST_ERROR as LLM_LAST_ERROR,
+)
 
 def index(request):
     docs = Document.objects.order_by('-uploaded_at')[:20]
@@ -26,7 +31,12 @@ def upload_document(request):
             if LLM_LAST_SOURCE == 'groq':
                 messages.success(request, f"Generated {len(generated)} questions using Groq.")
             else:
-                messages.info(request, "Using mock questions (no API key or API error). Add GROQ_API_KEY to .env and restart.")
+                has_key = bool(os.getenv('GROQ_API_KEY'))
+                if not has_key:
+                    messages.warning(request, "No GROQ_API_KEY found. Using mock questions.")
+                else:
+                    err = LLM_LAST_ERROR or 'Unknown error'
+                    messages.error(request, f"Groq API call failed: {err}. Using mock questions.")
             return redirect('polls:review_generated', doc_id=doc.id)
     else:
         form = UploadForm()

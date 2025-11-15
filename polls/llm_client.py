@@ -9,7 +9,7 @@ except Exception:
     Groq = None  # type: ignore
 
 
-DEFAULT_MODEL = os.getenv('GROQ_MODEL', 'llama-3.1-70b-versatile')
+DEFAULT_MODEL = os.getenv('GROQ_MODEL', 'llama-3.1-8b-instant')
 LAST_SOURCE = 'mock'  # 'groq' when API returns usable items
 LAST_ERROR: str | None = None
 
@@ -68,7 +68,7 @@ def generate_questions_from_text(text: str, max_questions: int = 6) -> List[Dict
     Returns a list of dicts with keys: text, choices (list[str]).
     Falls back to a small mock set when the API key is missing or on errors.
     """
-    global LAST_SOURCE
+    global LAST_SOURCE, LAST_ERROR
     api_key = _get_api_key()
     model = _get_model()
     if not api_key or Groq is None:
@@ -90,39 +90,43 @@ def generate_questions_from_text(text: str, max_questions: int = 6) -> List[Dict
         "MATERIAL:\n{material}"
     ).format(n=max_questions, material=(text or '')[:12000])
 
-    try:
-        resp = client.chat.completions.create(
-            model=model,
-            temperature=0.2,
-            messages=[
-                {"role": "system", "content": system_msg},
-                {"role": "user", "content": user_prompt},
-            ],
-            max_tokens=1200,
-        )
+    # Try the requested model, then a small set of known fallbacks
+    fallbacks = []
+    fb_env = os.getenv('GROQ_FALLBACK_MODEL')
+    if fb_env and fb_env != model:
+        fallbacks.append(fb_env)
+    for cand in ('llama-3.1-8b-instant'):
+        if cand != model and cand not in fallbacks:
+            fallbacks.append(cand)
 
-        content = resp.choices[0].message.content if resp.choices else ''
-
+    errors: list[str] = []
+    for m in [model] + fallbacks:
         try:
-            data = json.loads(content)
-        except Exception:
-            arr = _extract_json_array(content)
-            data = json.loads(arr) if arr else []
-
-        normalized = _normalize_items(data)
-        if normalized:
-            LAST_SOURCE = 'groq'
-            LAST_ERROR = None
-            return normalized[:max_questions]
-        LAST_SOURCE = 'mock'
-        LAST_ERROR = 'Empty or unparseable model output'
-        return MOCK_QUESTIONS[:max_questions]
-    except Exception as e:
-        LAST_SOURCE = 'mock'
-        try:
-            # keep short diagnostic without secrets
+            resp = client.chat.completions.create(
+                model=m,
+                temperature=0.2,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_prompt},
+                ],
+                max_tokens=1200,
+            )
+            content = resp.choices[0].message.content if resp.choices else ''
+            try:
+                data = json.loads(content)
+            except Exception:
+                arr = _extract_json_array(content)
+                data = json.loads(arr) if arr else []
+            normalized = _normalize_items(data)
+            if normalized:
+                LAST_SOURCE = 'groq'
+                LAST_ERROR = None
+                return normalized[:max_questions]
+            errors.append(f"{m}: Empty or unparseable model output")
+        except Exception as e:
             msg = str(e)
-            LAST_ERROR = msg[:300]
-        except Exception:
-            LAST_ERROR = 'Unknown error'
-        return MOCK_QUESTIONS[:max_questions]
+            errors.append(f"{m}: {msg[:200]}")
+
+    LAST_SOURCE = 'mock'
+    LAST_ERROR = '; '.join(errors)[:300] if errors else 'Unknown error'
+    return MOCK_QUESTIONS[:max_questions]
