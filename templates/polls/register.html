@@ -1,0 +1,23 @@
+{% extends 'polls/base.html' %}
+{% block title %}Register{% endblock %}
+{% block content %}
+  <div class="card">
+    <h2 style="margin-top:0;">Create an account</h2>
+    <form method="post" class="form-grid" novalidate>
+      {% csrf_token %}
+      <label>Username</label>
+      <input type="text" name="username" required />
+      <label>Password</label>
+      <input type="password" name="password" required />
+      <label>Role</label>
+      <select name="role">
+        <option value="professor">Professor</option>
+        <option value="student">Student</option>
+      </select>
+      <div class="btn-row">
+        <button type="submit" class="btn-primary">Sign up</button>
+      </div>
+    </form>
+    <p class="muted" style="margin-top:1rem;">Already have an account? <a href="/login/">Sign in</a></p>
+  </div>
+{% endblock %}

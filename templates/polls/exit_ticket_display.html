@@ -1,35 +1,31 @@
 {% extends 'polls/base.html' %}
 {% block title %}Exit Ticket{% endblock %}
 {% block content %}
-  <h2>Exit Ticket</h2>
-
-  {% if not ticket.active %}
-    <div style="
-      text-align:center;
-      padding:3rem 2rem;
-      background:linear-gradient(135deg, #fef3c7, #fde68a);
-      border-radius:12px;
-      border:2px solid #f59e0b;
-      max-width:700px;
-      margin:2rem auto;
-    ">
-      <div style="font-size:4rem; margin-bottom:1rem;">⚠️</div>
-      <h3 style="font-size:1.5rem; color:#92400e; margin-bottom:0.5rem;">
-        Exit Ticket Deactivated
-      </h3>
-      <p style="color:#78350f; font-size:1.1rem;">
-        This exit ticket has been deactivated by your instructor.
-      </p>
-    </div>
-  {% else %}
-    <p>{{ ticket.prompt_text }}</p>
-    <form method="post" action="{% url 'polls:exit_ticket_submit' ticket_id=ticket.id %}">
-      {% csrf_token %}
-      <label>Your response</label>
-      <textarea name="answer" rows="5" style="width:100%" required></textarea>
-      <div style="margin-top:.5rem">
-        <button type="submit">Submit</button>
+  <div class="card">
+    <h2 style="margin-top:0;">Exit Ticket</h2>
+    {% if not ticket.active %}
+      <div style="
+        text-align:center;
+        padding:2.2rem 1.8rem;
+        background:linear-gradient(135deg, #fef3c7, #fde68a);
+        border-radius:12px;
+        border:2px solid #f59e0b;
+        margin-top:1rem;
+      ">
+        <div style="font-size:3rem; margin-bottom:0.75rem;">⚠️</div>
+        <h3 style="font-size:1.35rem; color:#92400e; margin:0 0 0.4rem;">Exit Ticket Deactivated</h3>
+        <p style="color:#78350f; font-size:1rem;">This exit ticket has been deactivated by your instructor.</p>
       </div>
-    </form>
-  {% endif %}
+    {% else %}
+      <p style="margin-top:0.25rem; line-height:1.5; font-weight:500;">{{ ticket.prompt_text }}</p>
+      <form method="post" action="{% url 'polls:exit_ticket_submit' ticket_id=ticket.id %}" class="form-grid" style="margin-top:1rem;">
+        {% csrf_token %}
+        <label>Your response</label>
+        <textarea name="answer" rows="5" required></textarea>
+        <div class="btn-row">
+          <button type="submit" class="btn-primary">Submit</button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
 {% endblock %}

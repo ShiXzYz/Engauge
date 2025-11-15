@@ -1,5 +1,6 @@
 import os
 from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Q
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -8,6 +9,18 @@ import json
 
 from .forms import UploadForm
 from .models import Document, GeneratedQuestion, Poll, PollResponse
+from .forms import UploadForm, CourseCreateForm, JoinClassForm, RegisterForm
+from .models import (
+    Document,
+    GeneratedQuestion,
+    Poll,
+    PollResponse,
+    Course,
+    Enrollment,
+    Profile,
+    ExitTicket,
+    ExitTicketResponse,
+)
 from .utils import extract_text_from_file
 from .llm_client import (
     generate_questions_from_text,
@@ -20,17 +33,83 @@ from .llm_client import (
 # ========== EXISTING VIEWS ==========
 
 def index(request):
-    docs = Document.objects.order_by('-uploaded_at')[:20]
+    # Default landing. For professors, show their uploads; for others, a simple welcome.
+    docs = []
+    if request.user.is_authenticated and hasattr(request.user, 'profile') and request.user.profile.role == 'professor':
+        docs = Document.objects.filter(Q(course__created_by=request.user) | Q(course__isnull=True)).order_by('-uploaded_at')[:50]
     return render(request, 'polls/index.html', {'documents': docs})
 
 
+from django.contrib.auth import login as auth_login, authenticate, logout as auth_logout
+from django.contrib.auth.decorators import login_required
+
+
+def register(request):
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            from django.contrib.auth.models import User
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password']
+            role = form.cleaned_data['role']
+            if User.objects.filter(username=username).exists():
+                messages.error(request, 'Username already exists.')
+            else:
+                user = User.objects.create_user(username=username, password=password)
+                Profile.objects.create(user=user, role=role)
+                user = authenticate(username=username, password=password)
+                if user:
+                    auth_login(request, user)
+                    # Role-based landing after registration
+                    target = 'polls:index'
+                    if hasattr(user, 'profile'):
+                        if user.profile.role == 'professor':
+                            target = 'polls:manage_polls'
+                        elif user.profile.role == 'student':
+                            target = 'polls:student_home'
+                    return redirect(target)
+    else:
+        form = RegisterForm()
+    return render(request, 'polls/register.html', {'form': form})
+
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            auth_login(request, user)
+            # Role-based landing after login
+            target = 'polls:index'
+            if hasattr(user, 'profile'):
+                if user.profile.role == 'professor':
+                    target = 'polls:manage_polls'
+                elif user.profile.role == 'student':
+                    target = 'polls:student_home'
+            return redirect(target)
+        messages.error(request, 'Invalid username or password')
+    return render(request, 'polls/login.html', {})
+
+
+def logout_view(request):
+    auth_logout(request)
+    return redirect('polls:login')
+
+
+@login_required
 def upload_document(request):
+    if not hasattr(request.user, 'profile') or request.user.profile.role != 'professor':
+        messages.error(request, 'Professor access required to upload and generate questions.')
+        return redirect('polls:index')
     if request.method == 'POST':
         form = UploadForm(request.POST, request.FILES)
+        form.set_courses_for_user(request.user)
         if form.is_valid():
             f = form.cleaned_data['file']
             title = form.cleaned_data.get('title') or getattr(f, 'name', '')
-            doc = Document.objects.create(file=f, title=title)
+            course = form.cleaned_data['course']
+            doc = Document.objects.create(file=f, title=title, course=course)
             # extract text
             text = extract_text_from_file(doc.file.path)
             # generate multiple-choice questions
@@ -53,12 +132,15 @@ def upload_document(request):
             return redirect('polls:review_generated', doc_id=doc.id)
     else:
         form = UploadForm()
+        form.set_courses_for_user(request.user)
     return render(request, 'polls/upload.html', {'form': form})
 
 
 def review_generated(request, doc_id):
     doc = get_object_or_404(Document, id=doc_id)
     questions = doc.generated_questions.filter(status='pending')
+    accepted_questions = doc.generated_questions.filter(status='accepted')
+    rejected_questions = doc.generated_questions.filter(status='rejected')
     if request.method == 'POST':
         qid = request.POST.get('question_id')
         action = request.POST.get('action')
@@ -91,38 +173,24 @@ def review_generated(request, doc_id):
                     question_text=q.text,
                     choices=q.choices,
                     question_format=question_format,
-                    correct_answer=correct_answer
+                    correct_answer=correct_answer,
+                    course=q.document.course
                 )
             else:
                 # create exit ticket
-                from .models import ExitTicket
-                ExitTicket.objects.create(prompt_text=q.text)
-
-            # Check if there are any remaining pending questions
-            remaining_questions = doc.generated_questions.filter(status='pending').count()
-            if remaining_questions == 0:
-                # No more pending questions, delete the document
-                messages.success(request, f'Document "{doc.title}" has been automatically deleted (no pending questions remaining).')
-                doc.delete()
-                return redirect('polls:index')
+                ExitTicket.objects.create(prompt_text=q.text, course=q.document.course)
 
             return redirect('polls:manage_polls')
         else:
             q.status = 'rejected'
             q.save()
 
-        # Check if there are any remaining pending questions after rejection
-        remaining_questions = doc.generated_questions.filter(status='pending').count()
-        if remaining_questions == 0:
-            # No more pending questions, delete the document
-            messages.success(request, f'Document "{doc.title}" has been automatically deleted (no pending questions remaining).')
-            doc.delete()
-            return redirect('polls:index')
-
         return redirect('polls:review_generated', doc_id=doc.id)
     return render(request, 'polls/review.html', {
         'document': doc,
         'questions': questions,
+        'accepted_questions': accepted_questions,
+        'rejected_questions': rejected_questions,
         'groq_active': (LLM_LAST_SOURCE == 'groq')
     })
 
@@ -359,20 +427,81 @@ def poll_results(request, poll_id):
 
 
 def manage_polls(request):
-    polls = Poll.objects.order_by('-created_at')
-    from .models import ExitTicket
-    tickets = ExitTicket.objects.order_by('-created_at')
-    return render(request, 'polls/manage.html', {'polls': polls, 'tickets': tickets})
+    if not request.user.is_authenticated or not hasattr(request.user, 'profile') or request.user.profile.role != 'professor':
+        messages.error(request, 'Professor access required.')
+        return redirect('polls:index')
+    polls = Poll.objects.filter(course__created_by=request.user).order_by('-created_at')
+    tickets = ExitTicket.objects.filter(course__created_by=request.user).order_by('-created_at')
+    prof_courses = Course.objects.filter(created_by=request.user).order_by('name')
+    return render(request, 'polls/manage.html', {'polls': polls, 'tickets': tickets, 'courses': prof_courses})
+
+
+@login_required
+def courses(request):
+    if request.method == 'POST':
+        form = CourseCreateForm(request.POST)
+        if form.is_valid():
+            import random, string
+            name = form.cleaned_data['name']
+            # generate join code
+            join_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+            c = Course.objects.create(name=name, created_by=request.user, join_code=join_code)
+            Enrollment.objects.create(user=request.user, course=c, role='professor')
+            messages.success(request, f'Created class "{name}" with code {join_code}.')
+            return redirect('polls:courses')
+    else:
+        form = CourseCreateForm()
+    my_courses = Course.objects.filter(created_by=request.user).order_by('name')
+    return render(request, 'polls/courses.html', {'form': form, 'courses': my_courses})
+
+
+@login_required
+def join_class(request):
+    if request.method == 'POST':
+        form = JoinClassForm(request.POST)
+        if form.is_valid():
+            code = form.cleaned_data['join_code']
+            try:
+                c = Course.objects.get(join_code=code)
+            except Course.DoesNotExist:
+                messages.error(request, 'Invalid join code.')
+            else:
+                Enrollment.objects.get_or_create(user=request.user, course=c, defaults={'role': 'student'})
+                messages.success(request, f'Joined class {c.name}.')
+                return redirect('polls:student_home')
+    else:
+        form = JoinClassForm()
+    return render(request, 'polls/join_class.html', {'form': form})
+
+
+@login_required
+def student_home(request):
+    # Show open polls across enrolled courses
+    enrolls = Enrollment.objects.filter(user=request.user).select_related('course')
+    course_ids = [e.course_id for e in enrolls]
+    open_polls = Poll.objects.filter(active=True, course_id__in=course_ids).order_by('-created_at')
+    open_tickets = ExitTicket.objects.filter(active=True, course_id__in=course_ids).order_by('-created_at')
+    return render(request, 'polls/student_home.html', {'open_polls': open_polls, 'open_tickets': open_tickets})
+
+
+@login_required
+def toggle_poll_open(request, poll_id):
+    if request.method == 'POST':
+        p = get_object_or_404(Poll, id=poll_id)
+        if p.course and p.course.created_by != request.user:
+            messages.error(request, 'Not allowed.')
+        else:
+            p.active = not p.active
+            p.save(update_fields=['active'])
+    return redirect('polls:manage_polls')
 
 
 def exit_ticket_display(request, ticket_id):
-    from .models import ExitTicket
     ticket = get_object_or_404(ExitTicket, id=ticket_id)
     return render(request, 'polls/exit_ticket_display.html', {'ticket': ticket})
 
 
 def exit_ticket_submit(request, ticket_id):
-    from .models import ExitTicket, ExitTicketResponse
     ticket = get_object_or_404(ExitTicket, id=ticket_id)
     if request.method == 'POST':
         answer = (request.POST.get('answer') or '').strip()
@@ -383,12 +512,10 @@ def exit_ticket_submit(request, ticket_id):
 
 
 def exit_ticket_results(request, ticket_id):
-    from .models import ExitTicket
     ticket = get_object_or_404(ExitTicket, id=ticket_id)
     responses = ticket.responses.order_by('-created_at')[:200]
     total = ticket.responses.count()
     return render(request, 'polls/exit_ticket_results.html', {'ticket': ticket, 'responses': responses, 'total': total})
-    return render(request, 'polls/manage.html', {'polls': polls})
 
 
 def toggle_poll_active(request, poll_id):

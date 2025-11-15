@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Document, GeneratedQuestion, Poll, PollResponse, ExitTicket, ExitTicketResponse
+from .models import Document, GeneratedQuestion, Poll, PollResponse, ExitTicket, ExitTicketResponse, Course, Enrollment, Profile
 
 
 @admin.register(Document)
@@ -26,6 +26,23 @@ class PollAdmin(admin.ModelAdmin):
 @admin.register(PollResponse)
 class PollResponseAdmin(admin.ModelAdmin):
     list_display = ('poll', 'choice', 'created_at')
+
+
+@admin.register(Course)
+class CourseAdmin(admin.ModelAdmin):
+    list_display = ('name', 'join_code', 'created_by', 'created_at')
+    search_fields = ('name', 'join_code')
+
+
+@admin.register(Enrollment)
+class EnrollmentAdmin(admin.ModelAdmin):
+    list_display = ('user', 'course', 'role', 'created_at')
+    list_filter = ('role',)
+
+
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'role')
 
 
 @admin.register(ExitTicket)

@@ -1,0 +1,26 @@
+{% extends 'polls/base.html' %}
+{% block title %}My Classes{% endblock %}
+{% block content %}
+  <div class="card">
+    <h2 style="margin-top:0;">My Classes</h2>
+    <form method="post" class="form-grid" novalidate style="margin-top:.5rem;">
+      {% csrf_token %}
+      <label>New class name</label>
+      <input type="text" name="name" required />
+      <div class="btn-row">
+        <button type="submit" class="btn-primary">Create</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Existing</h3>
+    <ul style="padding-left:1.1rem;">
+      {% for c in courses %}
+        <li style="margin:.4rem 0; font-weight:500;">{{ c.name }} — <span class="muted">Join code:</span> <code>{{ c.join_code }}</code></li>
+      {% empty %}
+        <li class="muted">No classes yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}
