@@ -1,0 +1,20 @@
+{% extends 'polls/base.html' %}
+{% block title %}Poll{% endblock %}
+{% block content %}
+  <h2>Poll</h2>
+  <form method="post" action="{% url 'polls:poll_vote' poll_id=poll.id %}">
+    {% csrf_token %}
+    <p>{{ poll.question_text }}</p>
+    <ul>
+    {% for c in poll.choices %}
+      <li>
+        <label>
+          <input type="radio" name="choice" value="{{ forloop.counter0 }}" required />
+          {{ c }}
+        </label>
+      </li>
+    {% endfor %}
+    </ul>
+    <button type="submit">Submit</button>
+  </form>
+{% endblock %}

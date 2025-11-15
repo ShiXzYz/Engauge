@@ -1,0 +1,10 @@
+{% extends 'polls/base.html' %}
+{% block title %}Upload{% endblock %}
+{% block content %}
+  <h2>Upload a document (PDF or PPTX)</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Upload and generate questions</button>
+  </form>
+{% endblock %}

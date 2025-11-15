@@ -1,0 +1,36 @@
+{% extends 'polls/base.html' %}
+{% block title %}Review generated questions{% endblock %}
+{% block content %}
+  <h2>Review generated questions for "{{ document.title }}"</h2>
+  <p><a href="{% url 'polls:manage_polls' %}">Manage polls</a></p>
+  {% if questions %}
+    <ul>
+    {% for q in questions %}
+      <li class="question">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="question_id" value="{{ q.id }}" />
+          <label>Question text</label>
+          <textarea name="text" rows="3" style="width:100%">{{ q.text }}</textarea>
+          <div>
+            <label>Choices (4):</label>
+            {% for c in q.choices %}
+              <div><input type="text" name="choice_{{ forloop.counter0 }}" value="{{ c }}" style="width:100%" /></div>
+            {% endfor %}
+            {% for i in q.choices|length|add:'0'|make_list %}{% endfor %}
+            {% if q.choices|length < 4 %}
+              {% for i in "0123"|slice:q.choices|length %}{% endfor %}
+            {% endif %}
+          </div>
+          <div style="margin-top:.5rem">
+            <button name="action" value="accept">Accept & create poll</button>
+            <button name="action" value="reject">Reject</button>
+          </div>
+        </form>
+      </li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p>No pending questions. Upload a new document to generate questions.</p>
+  {% endif %}
+{% endblock %}
