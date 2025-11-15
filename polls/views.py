@@ -1,6 +1,11 @@
 import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+import json
+
 from .forms import UploadForm
 from .models import Document, GeneratedQuestion, Poll, PollResponse
 from .utils import extract_text_from_file
@@ -10,6 +15,9 @@ from .llm_client import (
     LAST_SOURCE as LLM_LAST_SOURCE,
     LAST_ERROR as LLM_LAST_ERROR,
 )
+
+
+# ========== EXISTING VIEWS ==========
 
 def index(request):
     docs = Document.objects.order_by('-uploaded_at')[:20]
