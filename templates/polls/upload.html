@@ -1,10 +1,32 @@
 {% extends 'polls/base.html' %}
 {% block title %}Upload{% endblock %}
+
 {% block content %}
-  <h2>Upload a document (PDF or PPTX)</h2>
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
+<h2 style="font-size:1.8rem; margin-bottom:1rem;">📤 Upload a Document</h2>
+
+<p style="color:#6b7280; margin-bottom:1rem;">
+  Supported formats: <strong>PDF</strong> or <strong>PPTX</strong>.
+</p>
+
+<form method="post" enctype="multipart/form-data"
+      style="background:white; padding:1.5rem; border-radius:12px; box-shadow:0 4px 14px rgba(0,0,0,0.06);">
+  {% csrf_token %}
+
+  <div style="margin-bottom:1rem;">
     {{ form.as_p }}
-    <button type="submit">Upload and generate questions</button>
-  </form>
+  </div>
+
+  <button type="submit"
+          style="
+            padding:0.7rem 1.5rem;
+            background:#4f46e5;
+            color:white;
+            border:none;
+            border-radius:8px;
+            cursor:pointer;
+            font-size:1rem;
+          ">
+    Upload & Generate Questions
+  </button>
+</form>
 {% endblock %}

@@ -1,29 +1,79 @@
 {% extends 'polls/base.html' %}
 {% block title %}Manage polls{% endblock %}
+
 {% block content %}
-  <h2>Polls</h2>
-  <p>Share the "Student link" with your class to let them vote; open "Results" to view responses.</p>
-  <table border="1" cellpadding="6" cellspacing="0">
-    <thead>
-      <tr>
-        <th>Question</th>
-        <th>Created</th>
-        <th>Active</th>
-        <th>Student link</th>
-        <th>Results</th>
-      </tr>
-    </thead>
-    <tbody>
+<h2 style="margin-bottom:0.5rem; font-size:1.8rem;">🛠 Manage Polls</h2>
+<p style="color:#6b7280; margin-bottom:1.5rem;">
+  Share the <strong>Student link</strong> with your class to let them vote.
+</p>
+
+<table style="
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0 0.6rem;
+">
+  <thead>
+    <tr style="text-align:left; color:#4b5563; font-size:0.95rem;">
+      <th>Question</th>
+      <th>Type</th>
+      <th>Created</th>
+      <th>Active</th>
+      <th>Student link</th>
+      <th>Results</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
     {% for p in polls %}
-      <tr>
-        <td>{{ p.question_text|truncatechars:100 }}</td>
-        <td>{{ p.created_at }}</td>
-        <td>{{ p.active }}</td>
-        <td><a href="{% url 'polls:poll_display' poll_id=p.id %}" target="_blank">Open</a></td>
-        <td><a href="{% url 'polls:poll_results' poll_id=p.id %}">Results</a></td>
-      </tr>
+    <tr style="
+      background:white;
+      box-shadow:0 3px 10px rgba(0,0,0,0.06);
+      border-radius:10px;
+    ">
+      <td style="padding:0.8rem 1rem;">{{ p.question_text|truncatechars:100 }}</td>
+      <td style="padding:0.8rem 1rem;">{{ p.get_question_format_display }}</td>
+      <td style="padding:0.8rem 1rem;">{{ p.created_at|date:"M d, Y" }}</td>
+      <td style="padding:0.8rem 1rem;">{{ p.active|yesno:"Yes,No" }}</td>
+
+      <td style="padding:0.8rem 1rem;">
+        <a href="{% url 'polls:poll_display' poll_id=p.id %}" target="_blank"
+           style="color:#6366f1; font-weight:600; text-decoration:none;">Open</a>
+      </td>
+
+      <td style="padding:0.8rem 1rem;">
+        <a href="{% url 'polls:poll_results' poll_id=p.id %}"
+           style="color:#4f46e5; font-weight:600; text-decoration:none;">Results</a>
+      </td>
+
+      <td style="padding:0.8rem 1rem;">
+        <form method="post"
+              action="{% url 'polls:toggle_poll_active' poll_id=p.id %}"
+              style="display:inline; margin-right:1rem;">
+          {% csrf_token %}
+          <button type="submit"
+            style="background:none; border:none; color:{% if p.active %}#d97706{% else %}#059669{% endif %}; cursor:pointer; font-weight:600;">
+            {% if p.active %}Deactivate{% else %}Activate{% endif %}
+          </button>
+        </form>
+
+        <form method="post"
+              action="{% url 'polls:delete_poll' poll_id=p.id %}"
+              style="display:inline;"
+              onsubmit="return confirm('Delete this poll?');">
+          {% csrf_token %}
+          <button type="submit"
+            style="background:none; border:none; color:#dc2626; cursor:pointer; font-weight:600;">
+            Delete
+          </button>
+        </form>
+      </td>
+    </tr>
     {% empty %}
-      <tr><td colspan="5">No polls yet. Accept questions from a document to create polls.</td></tr>
+    <tr>
+      <td colspan="7" style="padding:1rem; text-align:center; color:#6b7280;">
+        No polls yet.
+      </td>
+    </tr>
     {% endfor %}
     </tbody>
   </table>
