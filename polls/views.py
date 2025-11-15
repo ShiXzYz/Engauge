@@ -380,6 +380,10 @@ def toggle_poll_active(request, poll_id):
     poll = get_object_or_404(Poll, id=poll_id)
     if request.method == 'POST':
         poll.active = not poll.active
+        # Reset countdown when deactivating
+        if not poll.active:
+            poll.countdown_started = False
+            poll.countdown_start_time = None
         poll.save()
         status = "activated" if poll.active else "deactivated"
         messages.success(request, f'Poll "{poll.question_text[:50]}" has been {status}.')
@@ -400,3 +404,14 @@ def delete_document(request, doc_id):
         doc.delete()
         messages.success(request, f'Document "{doc.title}" has been deleted.')
     return redirect('polls:index')
+
+
+def start_countdown(request, poll_id):
+    from django.utils import timezone
+    poll = get_object_or_404(Poll, id=poll_id)
+    if request.method == 'POST':
+        poll.countdown_started = True
+        poll.countdown_start_time = timezone.now()
+        poll.save()
+        messages.success(request, 'Countdown started! Students will see the 3-2-1-GO countdown.')
+    return redirect('polls:poll_results', poll_id=poll.id)

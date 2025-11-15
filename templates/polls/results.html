@@ -36,6 +36,54 @@
 
 {% elif format == 'speed_ranking' %}
   <h3 style="margin-bottom:1rem;">Ranking Results</h3>
+
+  {% if not poll.countdown_started %}
+    <div style="
+      background:linear-gradient(135deg, #fef3c7, #fde68a);
+      padding:2rem;
+      border-radius:12px;
+      margin-bottom:2rem;
+      text-align:center;
+      border:2px solid #f59e0b;
+    ">
+      <p style="font-size:1.2rem; font-weight:600; color:#78350f; margin-bottom:1rem;">
+        ⏱️ Speed Ranking Mode
+      </p>
+      <p style="color:#92400e; margin-bottom:1.5rem;">
+        Click the button below to start a synchronized countdown for all students. They will see a 3-2-1-GO countdown before the questions appear.
+      </p>
+      <form method="post" action="{% url 'polls:start_countdown' poll_id=poll.id %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" style="
+          padding:1rem 2rem;
+          background:linear-gradient(135deg, #10b981, #059669);
+          color:white;
+          border:none;
+          border-radius:10px;
+          font-size:1.2rem;
+          font-weight:700;
+          cursor:pointer;
+          box-shadow:0 4px 12px rgba(16,185,129,0.3);
+        ">
+          🚀 Start Countdown
+        </button>
+      </form>
+    </div>
+  {% else %}
+    <div style="
+      background:#d1fae5;
+      padding:1rem;
+      border-radius:8px;
+      margin-bottom:1.5rem;
+      text-align:center;
+      border:2px solid #10b981;
+    ">
+      <p style="color:#065f46; font-weight:600;">
+        ✓ Countdown started! Students can now see the questions.
+      </p>
+    </div>
+  {% endif %}
+
   <p><strong>Total responses:</strong> {{ total }}</p>
 
   <table style="

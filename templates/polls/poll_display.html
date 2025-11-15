@@ -157,35 +157,139 @@
       </ul>
 
     {% elif poll.question_format == 'speed_ranking' %}
-      <div id="errorMessage" class="error-banner"></div>
+      {% if not poll.countdown_started %}
+        <!-- Waiting for countdown to start -->
+        <div style="
+          text-align:center;
+          padding:4rem 2rem;
+          background:linear-gradient(135deg, #e0e7ff, #c7d2fe);
+          border-radius:12px;
+          margin-top:2rem;
+        ">
+          <div style="font-size:4rem; margin-bottom:1rem;">⏱️</div>
+          <h3 style="font-size:1.8rem; color:#3730a3; margin-bottom:1rem;">
+            Waiting for Instructor
+          </h3>
+          <p style="color:#4338ca; font-size:1.2rem;">
+            The countdown will begin soon...
+          </p>
+          <div style="margin-top:2rem;">
+            <div class="spinner" style="
+              width:60px;
+              height:60px;
+              border:6px solid #e0e7ff;
+              border-top:6px solid #6366f1;
+              border-radius:50%;
+              margin:0 auto;
+              animation:spin 1s linear infinite;
+            "></div>
+          </div>
+        </div>
+        <style>
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        </style>
+        <script>
+          // Auto-refresh every 2 seconds to check if countdown started
+          setTimeout(function() {
+            location.reload();
+          }, 2000);
+        </script>
+      {% else %}
+        <!-- Countdown and Questions -->
+        <div id="countdownScreen" style="
+          text-align:center;
+          padding:4rem 2rem;
+          min-height:400px;
+          display:flex;
+          flex-direction:column;
+          justify-content:center;
+          align-items:center;
+        ">
+          <div id="countdownNumber" style="
+            font-size:15rem;
+            font-weight:900;
+            color:#6366f1;
+            line-height:1;
+            text-shadow:0 10px 30px rgba(99,102,241,0.3);
+          ">3</div>
+        </div>
 
-      <p style="text-align:center; font-style:italic;">
-        Rank the choices uniquely from 1 to {{ poll.choices|length }}
-      </p>
+        <div id="questionSection" style="display:none;">
+          <div id="errorMessage" class="error-banner"></div>
 
-      <table>
-        <thead>
-          <tr>
-            <th style="text-align:left">Choice</th>
-            <th style="text-align:left">Rank</th>
-          </tr>
-        </thead>
-        <tbody>
-        {% for c in poll.choices %}
-          <tr>
-            <td>{{ c }}</td>
-            <td>
-              <select name="rank_{{ forloop.counter0 }}" class="rank-select" required>
-                <option value="">--</option>
-                {% for i in poll.choices %}
-                  <option value="{{ forloop.counter }}">{{ forloop.counter }}</option>
-                {% endfor %}
-              </select>
-            </td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
+          <p style="text-align:center; font-style:italic;">
+            ⚡ Rank the choices uniquely from 1 to {{ poll.choices|length }} ⚡
+          </p>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align:left">Choice</th>
+                <th style="text-align:left">Rank</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for c in poll.choices %}
+              <tr>
+                <td>{{ c }}</td>
+                <td>
+                  <select name="rank_{{ forloop.counter0 }}" class="rank-select" required>
+                    <option value="">--</option>
+                    {% for i in poll.choices %}
+                      <option value="{{ forloop.counter }}">{{ forloop.counter }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <script>
+          // Calculate time elapsed since countdown started
+          var countdownStartTime = new Date("{{ poll.countdown_start_time|date:'c' }}");
+          var now = new Date();
+          var elapsedSeconds = Math.floor((now - countdownStartTime) / 1000);
+
+          var countdownNumber = document.getElementById('countdownNumber');
+          var countdownScreen = document.getElementById('countdownScreen');
+          var questionSection = document.getElementById('questionSection');
+
+          // If more than 4 seconds have passed, skip countdown and show questions immediately
+          if (elapsedSeconds >= 4) {
+            countdownScreen.style.display = 'none';
+            questionSection.style.display = 'block';
+          } else {
+            // Show countdown from the appropriate number
+            var count = 3 - elapsedSeconds;
+            if (count > 0) {
+              countdownNumber.textContent = count;
+            } else {
+              countdownNumber.textContent = 'GO!';
+              countdownNumber.style.color = '#10b981';
+            }
+
+            var countdownInterval = setInterval(function() {
+              count--;
+              if (count > 0) {
+                countdownNumber.textContent = count;
+              } else if (count === 0) {
+                countdownNumber.textContent = 'GO!';
+                countdownNumber.style.color = '#10b981';
+              } else {
+                clearInterval(countdownInterval);
+                // Hide countdown, show questions
+                countdownScreen.style.display = 'none';
+                questionSection.style.display = 'block';
+              }
+            }, 1000);
+          }
+        </script>
+      {% endif %}
 
     {% elif poll.question_format == 'team_battle' %}
       <!-- Step 1: Choose Team Side -->
