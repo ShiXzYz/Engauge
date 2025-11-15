@@ -78,30 +78,75 @@
     </tbody>
   </table>
 
-  <h2 style="margin-top:2rem">Exit Tickets</h2>
-  <p>Share the "Student link" with your class to let them submit a short response; open "Results" to view submissions.</p>
-  <table border="1" cellpadding="6" cellspacing="0">
-    <thead>
-      <tr>
-        <th>Prompt</th>
-        <th>Created</th>
-        <th>Active</th>
-        <th>Student link</th>
-        <th>Results</th>
-      </tr>
-    </thead>
-    <tbody>
+<h2 style="margin-top:2.5rem; font-size:1.8rem;">📘 Exit Tickets</h2>
+<p style="color:#6b7280; margin-bottom:1.5rem;">
+  Share the <strong>Student link</strong> with your class to gather quick reflections or check-ins.
+</p>
+
+<table style="
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0 0.6rem;
+  margin-top:1rem;
+">
+  <thead>
+    <tr style="text-align:left; color:#4b5563; font-size:0.95rem;">
+      <th>Prompt</th>
+      <th>Created</th>
+      <th>Active</th>
+      <th>Student link</th>
+      <th>Results</th>
+    </tr>
+  </thead>
+
+  <tbody>
     {% for t in tickets %}
-      <tr>
-        <td>{{ t.prompt_text|truncatechars:100 }}</td>
-        <td>{{ t.created_at }}</td>
-        <td>{{ t.active }}</td>
-        <td><a href="{% url 'polls:exit_ticket_display' ticket_id=t.id %}" target="_blank">Open</a></td>
-        <td><a href="{% url 'polls:exit_ticket_results' ticket_id=t.id %}">Results</a></td>
-      </tr>
+    <tr style="
+      background:white;
+      box-shadow:0 3px 10px rgba(0,0,0,0.06);
+      border-radius:10px;
+    ">
+      <td style="padding:0.8rem 1rem;">{{ t.prompt_text|truncatechars:120 }}</td>
+
+      <td style="padding:0.8rem 1rem;">
+        {{ t.created_at|date:"M d, Y" }}
+      </td>
+
+      <td style="padding:0.8rem 1rem;">
+        <span style="
+          padding:0.2rem 0.6rem;
+          border-radius:8px;
+          font-size:0.85rem;
+          font-weight:600;
+          color:{% if t.active %}#065f46{% else %}#92400e{% endif %};
+          background:{% if t.active %}#d1fae5{% else %}#fef3c7{% endif %};
+        ">
+          {% if t.active %}Active{% else %}Inactive{% endif %}
+        </span>
+      </td>
+
+      <td style="padding:0.8rem 1rem;">
+        <a href="{% url 'polls:exit_ticket_display' ticket_id=t.id %}"
+           target="_blank"
+           style="color:#6366f1; font-weight:600; text-decoration:none;">
+          Open
+        </a>
+      </td>
+
+      <td style="padding:0.8rem 1rem;">
+        <a href="{% url 'polls:exit_ticket_results' ticket_id=t.id %}"
+           style="color:#4f46e5; font-weight:600; text-decoration:none;">
+          Results
+        </a>
+      </td>
+    </tr>
     {% empty %}
-      <tr><td colspan="5">No exit tickets yet. Accept exit ticket prompts from a document.</td></tr>
+    <tr>
+      <td colspan="5" style="padding:1rem; text-align:center; color:#6b7280;">
+        No exit tickets yet.
+      </td>
+    </tr>
     {% endfor %}
-    </tbody>
-  </table>
+  </tbody>
+</table>
 {% endblock %}

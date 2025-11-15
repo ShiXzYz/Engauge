@@ -13,6 +13,8 @@ urlpatterns = [
     path('poll/<uuid:poll_id>/vote/', views.poll_vote, name='poll_vote'),
     path('poll/<uuid:poll_id>/submitted/', views.poll_submitted, name='poll_submitted'),
     path('poll/<uuid:poll_id>/results/', views.poll_results, name='poll_results'),
+    path('poll/<uuid:poll_id>/toggle/', views.toggle_poll_active, name='toggle_poll_active'),
+    path('poll/<uuid:poll_id>/delete/', views.delete_poll, name='delete_poll'),
     # exit tickets
     path('exit/<uuid:ticket_id>/', views.exit_ticket_display, name='exit_ticket_display'),
     path('exit/<uuid:ticket_id>/submit/', views.exit_ticket_submit, name='exit_ticket_submit'),

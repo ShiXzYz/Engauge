@@ -122,6 +122,23 @@
 <div class="poll-container">
   <h2>📊 Interactive Poll</h2>
 
+  {% if not poll.active %}
+    <div style="
+      text-align:center;
+      padding:3rem 2rem;
+      background:linear-gradient(135deg, #fef3c7, #fde68a);
+      border-radius:12px;
+      border:2px solid #f59e0b;
+    ">
+      <div style="font-size:4rem; margin-bottom:1rem;">⚠️</div>
+      <h3 style="font-size:1.5rem; color:#92400e; margin-bottom:0.5rem;">
+        Poll Deactivated
+      </h3>
+      <p style="color:#78350f; font-size:1.1rem;">
+        This poll has been deactivated by your instructor.
+      </p>
+    </div>
+  {% else %}
   <form method="post" action="{% url 'polls:poll_vote' poll_id=poll.id %}" id="pollForm">
     {% csrf_token %}
 
@@ -326,6 +343,7 @@
       Submit Response ➜
     </button>
   </form>
+  {% endif %}
 </div>
 
 

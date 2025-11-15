@@ -74,23 +74,21 @@ def review_generated(request, doc_id):
             q.status = 'accepted'
             q.save()
             if q.kind == 'mcq':
-                # create poll
-                Poll.objects.create(question_text=q.text, choices=q.choices)
+                # create poll with question format and correct answer
+                question_format = request.POST.get('question_format', 'single_choice')
+                correct_answer = request.POST.get('correct_answer', None)
+                if correct_answer:
+                    correct_answer = int(correct_answer)
+                Poll.objects.create(
+                    question_text=q.text,
+                    choices=q.choices,
+                    question_format=question_format,
+                    correct_answer=correct_answer
+                )
             else:
                 # create exit ticket
                 from .models import ExitTicket
                 ExitTicket.objects.create(prompt_text=q.text)
-            # create poll
-            question_format = request.POST.get('question_format', 'single_choice')
-            correct_answer = request.POST.get('correct_answer', None)
-            if correct_answer:
-                correct_answer = int(correct_answer)
-            Poll.objects.create(
-                question_text=q.text,
-                choices=q.choices,
-                question_format=question_format,
-                correct_answer=correct_answer
-            )
 
             # Check if there are any remaining pending questions
             remaining_questions = doc.generated_questions.filter(status='pending').count()
