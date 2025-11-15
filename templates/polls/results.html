@@ -1,0 +1,13 @@
+{% extends 'polls/base.html' %}
+{% block title %}Results{% endblock %}
+{% block content %}
+  <h2>Results</h2>
+  <p>{{ poll.question_text }}</p>
+  <ul>
+    {% for c, n in paired %}
+      <li>{{ c }} — {{ n }} vote{{ n|pluralize }}</li>
+    {% endfor %}
+  </ul>
+  <p>Total responses: {{ total }}</p>
+  <p><a href="{% url 'polls:manage_polls' %}">Back to Manage polls</a></p>
+{% endblock %}
