@@ -20,4 +20,6 @@ urlpatterns = [
     path('exit/<uuid:ticket_id>/', views.exit_ticket_display, name='exit_ticket_display'),
     path('exit/<uuid:ticket_id>/submit/', views.exit_ticket_submit, name='exit_ticket_submit'),
     path('exit/<uuid:ticket_id>/results/', views.exit_ticket_results, name='exit_ticket_results'),
+    path('exit/<uuid:ticket_id>/toggle/', views.toggle_ticket_active, name='toggle_ticket_active'),
+    path('exit/<uuid:ticket_id>/delete/', views.delete_ticket, name='delete_ticket'),
 ]

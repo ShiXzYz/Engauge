@@ -415,3 +415,23 @@ def start_countdown(request, poll_id):
         poll.save()
         messages.success(request, 'Countdown started! Students will see the 3-2-1-GO countdown.')
     return redirect('polls:poll_results', poll_id=poll.id)
+
+
+def toggle_ticket_active(request, ticket_id):
+    from .models import ExitTicket
+    ticket = get_object_or_404(ExitTicket, id=ticket_id)
+    if request.method == 'POST':
+        ticket.active = not ticket.active
+        ticket.save()
+        status = "activated" if ticket.active else "deactivated"
+        messages.success(request, f'Exit ticket "{ticket.prompt_text[:50]}" has been {status}.')
+    return redirect('polls:manage_polls')
+
+
+def delete_ticket(request, ticket_id):
+    from .models import ExitTicket
+    ticket = get_object_or_404(ExitTicket, id=ticket_id)
+    if request.method == 'POST':
+        ticket.delete()
+        messages.success(request, f'Exit ticket "{ticket.prompt_text[:50]}" has been deleted.')
+    return redirect('polls:manage_polls')
