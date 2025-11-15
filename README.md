@@ -1,6 +1,11 @@
 # Engauge — local professor polling app
 
-This is a local Django app that helps instructors upload class materials (PDF or PowerPoint), generate candidate multiple-choice questions using Claude (Anthropic), allow the instructor to accept/reject generated questions, and run live polls where students answer and the instructor sees results.
+This is a local Django app that helps instructors upload class materials (PDF or PowerPoint), generate candidate multiple-choice questions using Groq, allow the instructor to accept/reject generated questions, and run live polls where students answer and the instructor sees results.
+
+# Our Methodology
+
+Creating material for students to reinforce learning and move information from short term to long term information is one of the most effective ways for instructors to improve learning, recall, and gauge student understanding. However, creating this material for every class can be time consuming and high effort. Additionally, this material might not be reinforced continually after the class, and students may end up forgetting it. Engauge serves a double purpose. Using the professors lessons plans, it will automatically create poll questions and exit tickets, moving up the pyramid of Blooms Taxonomy, to assist with student learning. It will also provide students a gamified way to continually reinforce the information outside of lessons. It will also provide metrics to the professors, informing them on the subjects that are least understood by students, and giving them insight on which students need the most assistance.
+
 
 Key points
 - Python + Django backend
