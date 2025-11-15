@@ -91,8 +91,13 @@ def poll_vote(request, poll_id):
     if request.method == 'POST':
         choice = int(request.POST.get('choice'))
         PollResponse.objects.create(poll=poll, choice=choice)
-        return redirect('polls:poll_results', poll_id=poll.id)
+        return redirect('polls:poll_submitted', poll_id=poll.id)
     return redirect('polls:poll_display', poll_id=poll.id)
+
+
+def poll_submitted(request, poll_id):
+    poll = get_object_or_404(Poll, id=poll_id)
+    return render(request, 'polls/submitted.html', {'poll': poll})
 
 
 def poll_results(request, poll_id):

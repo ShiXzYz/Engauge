@@ -10,5 +10,6 @@ urlpatterns = [
     path('manage/', views.manage_polls, name='manage_polls'),
     path('poll/<uuid:poll_id>/', views.poll_display, name='poll_display'),
     path('poll/<uuid:poll_id>/vote/', views.poll_vote, name='poll_vote'),
+    path('poll/<uuid:poll_id>/submitted/', views.poll_submitted, name='poll_submitted'),
     path('poll/<uuid:poll_id>/results/', views.poll_results, name='poll_results'),
 ]
