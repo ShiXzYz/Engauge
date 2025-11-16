@@ -448,6 +448,15 @@
     </button>
   </form>
   {% endif %}
+  <div style="margin-top:1rem; text-align:center;">
+    {% if request.user.is_authenticated and request.user.profile and request.user.profile.role == 'student' %}
+      <a href="{% url 'polls:student_home' %}"
+         style="text-decoration:none; color:#4f46e5; font-weight:600;">← Back to Polls</a>
+    {% else %}
+      <a href="{% url 'polls:manage_polls' %}"
+         style="text-decoration:none; color:#4f46e5; font-weight:600;">← Back to Manage Polls</a>
+    {% endif %}
+  </div>
 </div>
 
 

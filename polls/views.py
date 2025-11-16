@@ -485,6 +485,13 @@ def student_home(request):
 
 
 @login_required
+def student_garden(request):
+    # Placeholder: student's personal knowledge garden or resources
+    # You can expand this to show saved notes, answered polls, or progress.
+    return render(request, 'polls/garden.html')
+
+
+@login_required
 def toggle_poll_open(request, poll_id):
     if request.method == 'POST':
         p = get_object_or_404(Poll, id=poll_id)

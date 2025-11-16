@@ -9,7 +9,6 @@
       :root {
         --primary: #6366f1;
         --primary-hover: #4f46e5;
-        --bg: #f8f9fc;
         --text: #1f2937;
         --nav-bg: white;
       }
@@ -141,8 +140,10 @@
     <header>
       <div class="container">
         <h1>
-          {% if hide_nav %}
-            <a href="{% url 'polls:knowledge_garden' %}">Engauge</a>
+          {% if request.user.is_authenticated and request.user.profile and request.user.profile.role == 'professor' %}
+            <a href="{% url 'polls:manage_polls' %}">Engauge</a>
+          {% elif request.user.is_authenticated and request.user.profile and request.user.profile.role == 'student' %}
+            <a href="{% url 'polls:student_home' %}">Engauge</a>
           {% else %}
             <a href="/">Engauge</a>
           {% endif %}
@@ -159,6 +160,7 @@
             {% else %}
               <a href="/join/">🔗 Join Class</a>
               <a href="/student/">🎓 Home</a>
+              <a href="/garden/">🌱 Garden</a>
             {% endif %}
             <a href="/logout/">Sign out</a>
           {% else %}
