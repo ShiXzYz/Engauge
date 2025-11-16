@@ -1,0 +1,15 @@
+{% extends 'polls/base.html' %}
+{% block title %}Exit Ticket Results{% endblock %}
+{% block content %}
+  <h2>Exit Ticket Results</h2>
+  <p><strong>Prompt:</strong> {{ ticket.prompt_text }}</p>
+  <p>Total responses: {{ total }}</p>
+  <ul>
+    {% for r in responses %}
+      <li><pre style="white-space:pre-wrap">{{ r.answer }}</pre> <small>— {{ r.created_at }}</small></li>
+    {% empty %}
+      <li>No responses yet.</li>
+    {% endfor %}
+  </ul>
+  <p><a href="{% url 'polls:manage_polls' %}">Back to Manage</a></p>
+{% endblock %}
