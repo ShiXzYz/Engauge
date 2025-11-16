@@ -514,7 +514,8 @@ def exit_ticket_submit(request, ticket_id):
         answer = (request.POST.get('answer') or '').strip()
         if answer:
             ExitTicketResponse.objects.create(ticket=ticket, answer=answer)
-            return redirect('polls:exit_ticket_results', ticket_id=ticket.id)
+            # Redirect to generic thank-you page (same as MCQ submission UX)
+            return redirect('polls:submitted_generic')
     return redirect('polls:exit_ticket_display', ticket_id=ticket.id)
 
 
@@ -523,6 +524,11 @@ def exit_ticket_results(request, ticket_id):
     responses = ticket.responses.order_by('-created_at')[:200]
     total = ticket.responses.count()
     return render(request, 'polls/exit_ticket_results.html', {'ticket': ticket, 'responses': responses, 'total': total})
+
+
+def submitted_generic(request):
+    """Simple thank-you page for submissions that are not tied to a poll context (e.g. exit tickets)."""
+    return render(request, 'polls/submitted.html')
 
 
 def toggle_poll_active(request, poll_id):
