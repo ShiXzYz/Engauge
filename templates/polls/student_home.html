@@ -1,0 +1,31 @@
+{% extends 'polls/base.html' %}
+{% block title %}Student Home{% endblock %}
+{% block content %}
+  <div class="card">
+    <h2 style="margin-top:0;">Open Questions</h2>
+    <h3 style="margin-top:1.2rem;">Polls</h3>
+    <ul style="padding-left:1.1rem;">
+      {% for p in open_polls %}
+        <li style="margin:.35rem 0;">
+          <a href="{% url 'polls:poll_display' poll_id=p.id %}" style="text-decoration:none;color:#4f46e5;font-weight:500;">
+            {{ p.question_text|truncatechars:100 }}
+          </a>
+        </li>
+      {% empty %}
+        <li class="muted">No open polls.</li>
+      {% endfor %}
+    </ul>
+    <h3 style="margin-top:1.6rem;">Exit Tickets</h3>
+    <ul style="padding-left:1.1rem;">
+      {% for t in open_tickets %}
+        <li style="margin:.35rem 0;">
+          <a href="{% url 'polls:exit_ticket_display' ticket_id=t.id %}" style="text-decoration:none;color:#6366f1;font-weight:500;">
+            {{ t.prompt_text|truncatechars:100 }}
+          </a>
+        </li>
+      {% empty %}
+        <li class="muted">No open exit tickets.</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}

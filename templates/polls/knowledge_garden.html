@@ -13,7 +13,7 @@
         <div class="sidebar">
             <div class="garden-header-mobile">
                 <h2>Knowledge Garden</h2>
-                <a href="{% url 'polls:student_poll' %}" class="back-btn-mobile">← Polls</a>
+                <a href="{% url 'polls:student_home' %}" class="back-btn-mobile" style="cursor: pointer; background: none; border: none; color: inherit; font: inherit; text-decoration:none; display:inline-block;">← Back</a>
             </div>
 
             <div class="seed-section">
@@ -77,7 +77,7 @@
                 <h1>Your Knowledge Garden</h1>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <button id="reset-garden-btn" class="reset-btn" title="Reset your garden">🔄 Reset Garden</button>
-                    <a href="{% url 'polls:student_poll' %}" class="back-btn">← Back to Polls</a>
+                    <a href="{% url 'polls:student_home' %}" class="back-btn" style="cursor: pointer; text-decoration:none; display:inline-block;">← Back to Poll</a>
                 </div>
             </div>
 

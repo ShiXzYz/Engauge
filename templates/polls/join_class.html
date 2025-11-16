@@ -1,0 +1,15 @@
+{% extends 'polls/base.html' %}
+{% block title %}Join a Class{% endblock %}
+{% block content %}
+  <div class="card">
+    <h2 style="margin-top:0;">Join a Class</h2>
+    <form method="post" class="form-grid" novalidate>
+      {% csrf_token %}
+      <label>Join code</label>
+      <input type="text" name="join_code" maxlength="12" required />
+      <div class="btn-row">
+        <button type="submit" class="btn-primary">Join</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}
