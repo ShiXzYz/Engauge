@@ -26,7 +26,6 @@ from .llm_client import (
     generate_questions_from_text,
     generate_exit_tickets_from_text,
     LAST_SOURCE as LLM_LAST_SOURCE,
-    LAST_ERROR as LLM_LAST_ERROR,
 )
 
 
@@ -123,12 +122,12 @@ def upload_document(request):
             if LLM_LAST_SOURCE == 'groq':
                 messages.success(request, f"Generated {len(generated_mcq)} MCQs and {len(generated_exit)} exit tickets using Groq.")
             else:
+                # Soften UX: avoid noisy error details; just inform about fallback
                 has_key = bool(os.getenv('GROQ_API_KEY'))
                 if not has_key:
-                    messages.warning(request, "No GROQ_API_KEY found. Using mock MCQs and exit tickets.")
+                    messages.info(request, f"Generated {len(generated_mcq)} MCQs and {len(generated_exit)} exit tickets (no API key configured).")
                 else:
-                    err = LLM_LAST_ERROR or 'Unknown error'
-                    messages.error(request, f"Groq API call failed: {err}. Using mock MCQs and exit tickets.")
+                    messages.info(request, f"Generated {len(generated_mcq)} MCQs and {len(generated_exit)} exit tickets using fallback content.")
             return redirect('polls:review_generated', doc_id=doc.id)
     else:
         form = UploadForm()
