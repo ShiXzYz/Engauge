@@ -1,7 +1,7 @@
 // Knowledge Garden - 3x3 Grid System with Drag & Drop
 (function() {
     // Constants
-    const GRID_SIZE = 9; // 3x3 grid
+    const GRID_SIZE = 6; // 3x3 grid
     const MAX_STAGE = 4; // 5 stages total: 0 (empty) to 4 (blooming)
     const XP_PER_ANSWER = 10;
     const XP_TO_WATER = 50; // Need 50 XP to water a plant
@@ -462,7 +462,7 @@
             }
 
             if (!found) {
-                showNotification('🔧 No plants to cycle! Plant some seeds first.');
+                showNotification('No plants to cycle! Plant some seeds first.');
                 return;
             }
 
@@ -487,7 +487,7 @@
                     cell.classList.add('blooming');
                 }
                 renderPlant(cell, newStage);
-                showNotification(`🔧 DEBUG: Plant ${debugPlantIndex + 1} → Stage ${newStage}`);
+                showNotification(`Plant ${debugPlantIndex + 1} → Stage ${newStage}`);
             }
 
             saveGardenState();
@@ -500,7 +500,7 @@
             localStorage.setItem('engauge_xp', gardenState.totalXP.toString());
             saveGardenState();
             updateUI();
-            showNotification('🔧 DEBUG: +10 XP added');
+            showNotification('QUESTION CORRECT: +10 XP added');
         }
     });
 
