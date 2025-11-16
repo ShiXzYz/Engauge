@@ -312,17 +312,24 @@ body {
         inset 0 -20px 40px rgba(139, 115, 85, 0.3),
         0 8px 24px rgba(0, 0, 0, 0.15);
     position: relative;
-    min-height: 700px;
-    aspect-ratio: 1;
-    max-width: 800px;
+    aspect-ratio: 832 / 448;
+    width: 100%;
+    min-width: 832px;
     margin: 0 auto;
+}
+
+.greenhouse .plant-grid {
+    position: absolute;
+    bottom: 2%;      /* tweak to 0–15% depending on taste */
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 /* 3x3 Plant Grid */
 .plant-grid {
     display: grid;
     grid-template-columns: repeat(3, 120px);
-    grid-template-rows: repeat(3, 120px);
+    grid-template-rows: repeat(2, 120px);
     gap: 20px;
     position: relative;
     z-index: 2;
@@ -365,7 +372,7 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 48px;
-    color: rgba(139, 115, 85, 0.3);
+    color: rgba(232, 203, 168, 0.9);
     font-weight: 300;
     pointer-events: none;
     z-index: 1;
