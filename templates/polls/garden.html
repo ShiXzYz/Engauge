@@ -1,0 +1,12 @@
+{% extends 'polls/base.html' %}
+{% block title %}Your Garden{% endblock %}
+{% block content %}
+  <div class="card">
+    <h2 style="margin-top:0;">🌱 Your Garden</h2>
+    <p class="muted" style="margin-top:.25rem;">This is your personal space. We can add saved notes, answered polls, or progress here.</p>
+
+    <div style="margin-top:1rem;">
+      <a href="{% url 'polls:student_home' %}" style="text-decoration:none; color:#4f46e5; font-weight:600;">← Back to Polls</a>
+    </div>
+  </div>
+{% endblock %}

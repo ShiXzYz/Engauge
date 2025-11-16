@@ -89,7 +89,31 @@
 </ul>
 
 {% else %}
-<p style="color:#6b7280;">No pending questions. Upload a new document.</p>
+<p style="color:#6b7280;">No pending questions for this upload.</p>
+{% endif %}
+
+<hr style="margin:1.5rem 0; border:none; border-top:1px solid #e5e7eb;" />
+
+<h3 style="margin-bottom:0.5rem;">Accepted</h3>
+{% if accepted_questions %}
+  <ul>
+    {% for q in accepted_questions %}
+      <li>{{ q.text }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p style="color:#6b7280;"><em>None yet.</em></p>
+{% endif %}
+
+<h3 style="margin-bottom:0.5rem;">Rejected</h3>
+{% if rejected_questions %}
+  <ul>
+    {% for q in rejected_questions %}
+      <li>{{ q.text }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p style="color:#6b7280;"><em>None.</em></p>
 {% endif %}
 
 <script>

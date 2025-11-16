@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 import uuid
 
 
@@ -8,6 +9,8 @@ class Document(models.Model):
     file = models.FileField(upload_to='documents/')
     title = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(default=timezone.now)
+    # Optional link to a course (class)
+    course = models.ForeignKey('Course', null=True, blank=True, on_delete=models.SET_NULL, related_name='documents')
 
     def __str__(self):
         return self.title or str(self.id)
@@ -43,6 +46,8 @@ class Poll(models.Model):
     active = models.BooleanField(default=False)
     countdown_started = models.BooleanField(default=False)  # For speed_ranking: whether countdown has started
     countdown_start_time = models.DateTimeField(null=True, blank=True)  # For speed_ranking: when countdown started
+    # Optional link to a course
+    course = models.ForeignKey('Course', null=True, blank=True, on_delete=models.CASCADE, related_name='polls')
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -63,6 +68,7 @@ class ExitTicket(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     prompt_text = models.TextField()
     active = models.BooleanField(default=False)
+    course = models.ForeignKey('Course', null=True, blank=True, on_delete=models.CASCADE, related_name='exit_tickets')
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -77,3 +83,35 @@ class ExitTicketResponse(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=['ticket'])]
+
+
+class Profile(models.Model):
+    ROLE_CHOICES = [('professor', 'Professor'), ('student', 'Student')]
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+
+    def __str__(self):
+        return f"{self.user.username} ({self.role})"
+
+
+class Course(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='courses_created')
+    join_code = models.CharField(max_length=12, unique=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return self.name
+
+
+class Enrollment(models.Model):
+    ROLE_CHOICES = [('student', 'Student'), ('professor', 'Professor')]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='enrollments')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student')
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = ('user', 'course')
